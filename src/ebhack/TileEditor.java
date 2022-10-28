@@ -1946,10 +1946,10 @@ public class TileEditor extends ToolModule implements ActionListener{
          */
         public void setTilesetAsString(String in)
         {
-            String[] tilesCsv = in.split("\n\n");
+            String[] tilesCsv = in.split("\r\n\r\n|\n\n|\r\r");
             for (int tile = 0; tile < tilesCsv.length; tile++)
             {
-                String[] tmp = tilesCsv[tile].split("\n");
+                String[] tmp = tilesCsv[tile].split("\r\n|\n|\r");
                 setTileAsString(tile, tmp[0]);
                 setTileAsString(tile ^ 512, tmp[1]);
             }
@@ -2366,7 +2366,7 @@ public class TileEditor extends ToolModule implements ActionListener{
          */
         public void setPalettesAsString(String pal)
         {
-            String[] pals = pal.split("\n");
+            String[] pals = pal.split("\r\n|\n|\r");
             for (int i = 0; i < pals.length; i++)
                 this.setPaletteAsString(pals[i]);
         }
@@ -2667,7 +2667,7 @@ public class TileEditor extends ToolModule implements ActionListener{
          */
         public void setArrangementsAsString(String arr)
         {
-            String[] arrs = arr.split("\n");
+            String[] arrs = arr.split("\r\n|\n|\r");
             for (int i = 0; i < arrs.length; i++)
                 this.setArrangementAsString(i, arrs[i]);
         }
@@ -2702,7 +2702,7 @@ public class TileEditor extends ToolModule implements ActionListener{
          */
         public void setAllDataAsString(String all)
         {
-            String[] tmp = all.split("\n\n\n");
+            String[] tmp = all.split("\r\n\r\n\r\n|\n\n\n|\r\r\r");
             this.setTilesetAsString(tmp[0]);
             this.setPalettesAsString(tmp[1]);
             this.setArrangementsAsString(tmp[2]);
