@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="EbProjectEditor:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/EbProjectEditor_jar</output-path>
+    <root id="archive" name="EbProjectEditor.jar">
+      <element id="module-output" name="EbProjectEditor" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/yaml/snakeyaml/1.33/snakeyaml-1.33.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

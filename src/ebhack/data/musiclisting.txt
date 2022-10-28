@@ -1,0 +1,192 @@
+                 00 - None
+                 01 - Gas station
+                 02 - Naming screen
+                 03 - Setup screen
+                 04 - None
+                 05 - You win 1
+                 06 - Level up
+                 07 - You lose
+                 08 - Battle swirl 1
+                 09 - Battle swirl 2
+                 0A - Ness' house
+                 0B - Battle swirl 3
+                 0C - You win!
+                 0D - Teleport out
+                 0E - Teleport fail
+                 0F - Falling underground
+                 10 - Dr. Andonuts' lab
+                 11 - Monotoli building
+                 12 - Sloppy house
+                 13 - Neighbor's house
+                 14 - Arcade
+                 15 - Pokey's house
+                 16 - Hospital
+                 17 - Ness' house (Pollyanna)
+                 18 - Paula's theme
+                 19 - Chaos Theater
+                 1A - Hotel
+                 1B - Good morning
+                 1C - Department Store
+                 1D - Onett at night 1
+                 1E - Your Sanctuary 1
+                 1F - Your Sanctuary 2
+                 20 - Giant Step
+                 21 - Lilliput Steps
+                 22 - Milky Well
+                 23 - Rainy Circle
+                 24 - Magnet Hill
+                 25 - Pink Cloud
+                 26 - Lumine Hall
+                 27 - Fire Spring
+                 28 - near a boss
+                 29 - Alien Investigation
+                 2A - Fire Springs hall
+                 2B - Belch's Base
+                 2C - Zombie Threed
+                 2D - Spooky Cave
+                 2E - Onett
+                 2F - Fourside
+                 30 - Saturn Valley
+                 31 - Monkey Caves
+                 32 - Moonside
+                 33 - Dusty Dunes Desert
+                 34 - Peaceful Rest Valley
+                 35 - Zombie Threed
+                 36 - Winters
+                 37 - Cave near a boss
+                 38 - Summers
+                 39 - Jackie's Cafe
+                 3A - Sailing to Scaraba
+                 3B - Dalaam
+                 3C - Mu Training
+                 3D - Bazaar
+                 3E - Scaraba desert
+                 3F - Pyramid
+                 40 - Deep Darkness
+                 41 - Tenda Village
+                 42 - Welcome home
+                 43 - Magicant 2
+                 44 - Lost Underworld
+                 45 - First step back
+                 46 - Second step back
+                 47 - The Place
+                 48 - Giygas Awakens
+                 49 - Giygas phase 2
+                 4A - Giygas is weakened
+                 4B - Giygas death
+                 4C - Runaway 5 concert 1
+                 4D - Runaway 5 tour bus
+                 4E - Runaway 5 concert 2
+                 4F - Power
+                 50 - Venus' concert
+                 51 - Yellow submarine
+                 52 - Bicycle
+                 53 - Sky Runner
+                 54 - Sky Runner falling
+                 55 - Bulldozer
+                 56 - Tessie
+                 57 - City bus
+                 58 - Fuzzy Pickles
+                 59 - Delivery
+                 5A - Return to your body
+                 5B - Phase Distorter going back in time
+                 5C - Coffee break
+                 5D - Because I Love You
+                 5E - Good Friends, Bad Friends
+                 5F - Smiles and Tears
+                 60 - vs. Cranky Lady
+                 61 - vs. Spinning Robo
+                 62 - vs. S. Evil Mushroom
+                 63 - vs. Master Belch
+                 64 - vs. N. A. Retro Hippie
+                 65 - vs. Runaway Dog
+                 66 - vs. Cave Boy
+                 67 - vs. Your Sanctuary Boss
+                 68 - vs. Kraken
+                 69 - Giygas heavy metal
+                 6A - Inside the Dungeon
+                 6B - Megaton Walk
+                 6C - Sea of Eden
+                 6D - Stonehenge destructs
+                 6E - Sky Runner crash
+                 6F - Magic Cake
+                 70 - Pokey's House 2
+                 71 - Buzz Buzz swatted
+                 72 - Onett at night 2
+                 73 - Phone call
+                 74 - Knock knock - right
+                 75 - Pink Cloud
+                 76 - Cnett at night 3
+                 77 - Apple of Enlightenment
+                 78 - Hotel Darkmoon
+                 79 - Onett Intro
+                 7A - Sunrise, Onett
+                 7B - Someone joins
+                 7C - Enter Starman Jr.
+                 7D - Boarding school
+                 7E - Phase Distorter
+                 7F - Phase Distorter II
+                 80 - Boy Meets Girl
+                 81 - Happy Threed
+                 82 - Runaway 5 are freed
+                 83 - Flying Man
+                 84 - Onett at night 2
+                 85 - Hidden Song
+                 86 - Your Sanctuary boss
+                 87 - Teleport in
+                 88 - Saturn Valley cave
+                 89 - Elevator down
+                 8A - Elevator up
+                 8B - Elevator stopping
+                 8C - Topolla Theater
+                 8D - vs. Master Barf
+                 8E - going to Magicant
+                 8F - leaving Magicant
+                 90 - defeated the Kraken
+                 91 - stonehenge destructs
+                 92 - Tessie sighting
+                 93 - Meteor fall
+                 94 - vs. Starman Jr.
+                 95 - Runaway 5 help out
+                 96 - Knock knock - left
+                 97 - Onett after meteor 1
+                 98 - Onett after meteor 2
+                 99 - Pokey's theme
+                 9A - Onett at night 4
+                 9B - Your Sanctuary boss
+                 9C - Meteor strike
+                 9D - Attract mode
+                 9E - Are you sure?  Yep
+                 9F - Peaceful Rest Valley 2
+                 A0 - rec. Giant Step
+                 A1 - rec. Lilliput Steps
+                 A2 - rec. Milky well
+                 A3 - rec. Rainy Circle
+                 A4 - rec. Magnet Hill
+                 A5 - rec. Pink Cloud
+                 A6 - rec. Lumine Hall
+                 A7 - rec. Fire Spring
+                 A8 - Sound Stone
+                 A9 - Eight Melodies
+                 AA - Dalaam Intro
+                 AB - Winters intro
+                 AC - Pokey escapes
+                 AD - Good Morning 2
+                 AE - Gas Station 2
+                 AF - Title screen
+                 B0 - Battle swirl
+                 B1 - Pokey escapes
+                 B2 - Good morning 3
+                 B3 - Robotomy part 1
+                 B4 - Pokey escapes
+                 B5 - Return to your body
+                 B6 - Giygas static
+                 B7 - sudden victory
+                 B8 - You win vs. boss
+                 B9 - Giygas phase three
+                 BA - Giygas phase one
+                 BB - Give us strength
+                 BC - Good morning 4
+                 BD - Sound Stone
+                 BE - Giygas death
+                 BF - Giygas weakened

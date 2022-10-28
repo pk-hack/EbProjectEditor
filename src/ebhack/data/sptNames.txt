@@ -1,0 +1,452 @@
+0-Ness
+1-Paula
+2-Jeff
+3-Poo
+4-Robot Ness
+5-Ness in pajamas
+6-Ness on bicycle
+7-Ness angel
+8-Paula angel
+9-Jeff angel
+10-Poo angel
+11-Diamondized person
+12-Charred person
+13-Ness doing peace sign
+14-Jeff in bed
+15-Ness lying down
+16-Ness climbing
+17-Paula climbing
+18-Jeff climbing
+19-Poo climbing
+20-Ness climbing down
+21-Paula climbing down
+22-Jeff climbing down
+23-Poo climbing down
+24-Robot
+25-Robot on the ground
+26-Li'l Ness
+27-Li'l Paula
+28-Li'l Jeff
+29-Li'l Poo
+30-Li'l Escargo Express Guy
+31-Li'l Mach Pizza Guy
+32-Li'l gift box
+33-Li'l angel
+34-Li'l teddy bear
+35-Li'l diamondized guy
+36-Li'l charred guy
+37-Li'l Ness doing peace sign
+38-Flying Man
+39-King
+40-Brick Road (biiiig!)
+41-King climbing up
+42-King climbing down
+43-Pokey
+44-Picky
+45-Bubble Monkey
+46-Bubble Monkey climbing up
+47-Pokey in his suit
+48-B. Monkey and li'l bubble
+49-B. Monkey, floating
+50-Teddy bear
+51-Old guy with cane
+52-Old lady with cane
+53-Old fat guy with hat
+54-Guy in blue clothes
+55-Sorta bald guy in suit
+56-Brunette shopping lady
+57-Blonde shopping lady
+58-Fat guy in red suit
+59-Drinking guy
+60-Blonde guy in a suit
+61-Dark-haired guy in a suit
+62-Sneaky guy with a hat
+63-Nerdy red-haired guy
+64-Blonde lady w/ blue dress
+65-Blonde lady w/ red dress
+66-Elevator lady
+67-Blonde happy lady
+68-Unassuming local guy
+69-Young blonde guy in blue
+70-Surfer
+71-Beach lady
+72-Hotel attendant
+73-Cop in sunglasses
+74-Captain Strong
+75-Travelling entertainer
+76-Trumpet person
+77-Jamaican guy
+78-Mr. T
+79-Guy in swimming suit
+80-Girl in bikini
+81-Bus driver head
+82-Tessie watcher
+83-Jackie
+84-Punk guy
+85-Weirdo guy in swim trunks
+86-Zombie lady
+87-Dalaamese servant
+88-Chinese girl
+89-Ship captain
+90-Ship crewman
+91-Lady in veil
+92-Happy turban guy
+93-Big nose Arab guy
+94-Mustache Arab turban guy
+95-Arab Mr. T
+96-Tenda
+97-Star Master guy
+98-Weird horned guy
+99-Flower
+100-Insane Cultist
+101-Tribal warrior
+102-Palm tan guy
+103-Sun bathing girl
+104-Chinese monk guy
+105-Invisible
+106-Rabbit
+107-Big smile lady
+108-Bodyguard
+109-Mexican guy
+110-Bus driver
+111-Blonde guy in blue suit
+112-Some brunette kid
+113-"I love qowga" shirt guy
+114-Scuzzy guy
+115-Red clothes person
+116-Orange haired nerd kid
+117-Tough guy w/ sunglasses
+118-Shy guy
+119-Pigtail blonde girl
+120-Pigtail dark haired girl
+121-Yellow clothes blonde
+122-Little kid in blue
+123-Kid in baseball helmet
+124-Kid in derby hat
+125-Kid in detective hat
+126-Blonde ponytail girl
+127-Happy girl in red
+128-Chick
+129-Dog
+130-Cat
+131-Bird on perch
+132-Monkey
+133-Blue cow
+134-Escargo Express guy
+135-Hint guy (???)
+136-Baker
+137-Girl in striped apron
+138-Doctor
+139-Nurse
+140-Thick glasses lady
+141-Waitress
+142-Camera guy
+143-Hidden arms dealer
+144-Mom
+145-Tracy
+146-Aloysius Minch
+147-Lardna Minch
+148-Gorgeous
+149-Lucky
+150-Mach Pizza guy
+151-Lier X. Agerate
+152-Frank
+153-Mayor Pirkle
+154-Paula's father
+155-Paula's mother
+156-Everdred
+157-Poochyfud
+158-Mr. Carpainter
+159-Female monkey
+160-Brick Road
+161-Dr. Andonuts
+162-Dalaam girl
+163-Monotoli
+164-Venus
+165-Poo's master
+166-Telephone head guy
+167-Preet proot guy
+168-Star Master flying away
+169-Tenda chief
+170-Mr. Saturn
+171-Miner
+172-Miner's brother
+173-Fourside museum guy
+174-Orange Kid
+175-Apple Kid
+176-Talah Rama
+177-Venus' mother
+178-Brick Road head
+179-Everdred lying down
+180-Magic cake lady
+181-Tony
+182-Tony in bed
+183-Gorgeous dancing
+184-Runaway Five drummer
+185-Runaway Five bass player
+186-Runaway Five sax player
+187-Helpful mole
+188-Healer
+189-Music notes
+190-Pu pu (???)
+191-Zzz
+192-weird white bubble thing
+193-Light bulb
+194-Mystical Record
+195-Weird question mark
+196-Meteor
+197-Bench
+198-Police barrier
+199-Weird tail thing
+200-Streetlight
+201-Bus stop sign
+202-Oval cloud
+203-Street sign
+204-City bus
+205-Real taxi
+206-Delivery truck
+207-White delivery truck
+208-Sky runner
+209-Phase Distorter
+210-Bicycle
+211-Ship
+212-Sign
+213-Trash can
+214-Telephone
+215-Pay phone
+216-Weird think marks
+217-Surprise mark
+218-Sweat
+219-Twinkling stars
+220-Pharaoh casket
+222-Apple
+223-Bananas
+224-Can (Tenda Village)
+225-Little mushroom
+226-Mailbox
+227-DON'T ENTER sign
+228-Magic Tart stand
+229-Shadow
+230-Crossroad signs
+231-Exclamation mark
+232-Dalaam present
+233-Jukebox
+234-Slot machine
+235-Pile of bones
+236-Sesame seed
+238-Cross gravestone
+239-Broken phase distorter
+240-Garbage
+241-Star Master's Poof Cloud
+242-Runaway 5 bus
+243-Submarine
+244-Submarine periscope
+245-Broken Mani-Mani statue
+247-Jar of fly honey
+248-Cell door
+249-Coffee Wiggles
+250-Water ripple (Tessie rising)
+251-Tessie
+252-Drum rim
+253-Big dirt scooper
+254-Guy in cool red car
+255-Flame?
+256-Fountain of Healing (mini)
+257-Shiny Enemy Outside
+258-ATM machine
+259-Talking stone
+260-Ship
+261-Casket
+262-Mr. Saturn ball and chain
+263-Mini-ghost
+264-Pencil statue
+265-Tree in pot
+266-Pyramid door
+267-Li'l talking stone
+268-Star (Onett sky?)
+269-Weird Junk
+270-Boogy Tent eye
+271-Boogy Tent mouth
+272-Microphone
+273-Mr. Batty
+274-Clumsy Robot
+275-Electro Swoosh
+276-French Kiss of Death
+277-Fobby
+278-Robo-pump
+279-Armored Frog
+280-Apple Kid's Mouse
+281-Spiteful Crow
+282-Thirsty Coil Snake
+283-Skate Punk
+284-Stinky Ghost
+285-Handsome Tom
+286-Mad Duck
+287-Manly Fish
+288-Mad Taxi
+289-Demonic Petunia
+290-Ramblin' Evil Mushroom
+291-Ranboob
+292-Evil Mani-Mani
+293-Gruff Goat
+294-Kraken
+295-Crested Booka
+296-Territorial Oak
+297-Wetnosaur
+298-Master Barf
+299-Abstract Art
+300-Zap Eel
+301-Smilin' Sphere
+302-Starman
+303-Li'l UFO
+304-Zombie Possessor
+305-Whirling Robo
+306-Shattered Man
+307-Urban Zombie
+308-Crazed Sign
+309-Sentry Robot
+310-Bad Buffalo
+311-Chomposaur
+312-Gigantic Ant
+313-Arachnid!
+314-Slimey Little Pile
+315-Black Antoid
+316-Mobile Sprout
+317-No Good Fly
+318-Skelpion
+319-Lethal Asp Hieroglyph
+320-Rough Playing Mole (stupid)
+321-Petrified Royal Guard
+322-Noose Man
+323-Thunder Mite
+324-Guardian Hieroglyph
+325-Dali's Clock
+326-Ego Orb
+327-Master Belch
+328-Cave Boy
+329-Runaway Dog
+330-Mighty Bear
+331-Plain Crocodile
+332-"Your Sanctuary" point boss
+333-Zombie (Glued to Floor)
+334-Surprised Ness
+335-Surprised Paula
+336-Surprised Jeff
+337-Surprised Poo
+338-Surprised Ness angel?
+339-Surprised Paula angel?
+340-Surprised Jeff angel?
+341-Surprised Poo angel?
+342-Diamondized surprised?
+343-Small shadow
+344-Teddy Bear (surprised/in cabin cell)
+345-Runaway 5 pianist
+346-Fly
+347-Water Ring (in the water)
+348-Big Water Ring (big thing in water)
+349-Knocking on door
+350-Heart
+351-Cell phone (Tenda village)
+352-Hawk's eye
+353-Ness' mom sitting
+354-Venus
+355-Rope
+356-Tony kneeling
+358-Ness' dog sleeping
+359-Rock
+360-New Age Retro Hippie
+361-Poo meditating
+362-Cat
+363-Zombie Dog
+364-Mu ghost
+365-Flag of the Extinct Happy People?
+366-Leaves (before/during Tessie rises)
+367-Tessie water ripples (top)
+368-Tessie water ripples (bottom)
+369-Giygas to Ness Transform
+371-A Plate
+372-Drapes closed
+373-Yellow drapes open
+374-Yellow drapes closed
+376-Police car
+377-Ness Sleeping
+378-Teddy Bear
+379-Teddy Bear
+381-Picky sitting
+382-Ness Sleeping With Hat
+383-Zzzs
+384-Pay phone
+385-Cop
+386-Crooked Cop
+387-Unassuming Local Guy
+388-New Age Retro Hippie
+389-Tough Guy
+390-Annoying Old Party Man
+391-Cranky Lady
+392-Paula lying down
+393-Jeff lying down
+394-Poo lying down
+395-Electra
+396-Everdred
+397-Li'l tenda
+398-King in the Flashback
+399-Bird
+400-Frankystein Mk II
+401-Red Fountain (Lost Underworld)
+402-Apple Kid sign
+403-Orange Kid sign
+404-Spa Sign
+405-Past baby cradle
+406-Eraser statue
+407-$ box
+408-Magnet Hill
+409-Helicopter
+410-Broken helicopter
+411-Deep darkness "phone"
+412-Magic Butterfly
+413-Tools
+414-Mole Playing Rough
+415-Rowdy Mouse
+416-Criminal Caterpillar
+417-Clumsy Robot
+418-Guardian digger
+419-Helicopter blade
+420-Sky Runner electric thingies
+421-Wood box
+422-Ornaments on Poo's Temple
+423-Helicopter back
+424-Rich Pokey's head
+425-Bad Palette Fountain
+426-Li'l Toucan Phone
+427-ATM Guy Underwater
+428-Instant Revitalizing Device
+429-Secret door in Monotoli building
+430-Secret door in Monotoli building
+431-Magic Butterfly
+432-Burglin Park sign
+433-Lucky (Runaway 5 member)
+434-Ness with messed palette
+435-Exit mouse
+436-Ness in PJs
+437-Zombie lying down
+441-Hotel sign
+442-Camel
+443-Trick or Trick Kid
+444-Angel of Everdred
+445-Hint man
+446-Saturn Valley ATM
+447-Runaway 5 member's head
+448-Photographer's camera
+449-Bad Palette Guy (Onett Night)
+450-Exit Mouse (no sign)
+451-Slots
+452-Ness resting
+453-Paula resting
+454-Dept. Store Mook
+456-Lying down robot Ness
+457-Heavily Armed Pokey
+458-Red truck
+459-White truck
+460-Master Criminal Worm
+461-Tessie Water Ring
+462-Big Tessie Water Ring
