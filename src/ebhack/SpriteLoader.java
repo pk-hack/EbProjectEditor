@@ -5,13 +5,14 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
 public class SpriteLoader extends ToolModule {
-	private static Image[][] sprites = new Image[464][4];;
-	private static int[] widths = new int[464];
-	private static int[] heights = new int[464];
+	private static ArrayList<Image[]> sprites = new ArrayList<Image[]>();
+	private static ArrayList<Integer> widths = new ArrayList<Integer>();
+	private static ArrayList<Integer> heights = new ArrayList<Integer>();
 
 	public SpriteLoader(YMLPreferences prefs) {
 		super(prefs);
@@ -36,30 +37,32 @@ public class SpriteLoader extends ToolModule {
 	}
 	
 	public static Image getSprite(int n, int direction) {
-		return sprites[n][direction];
+		return sprites.get(n)[direction];
 	}
 	
 	public static int getSpriteW(int n) {
-		return widths[n];
+		return widths.get(n);
 	}
 	
 	public static int getSpriteH(int n) {
-		return heights[n];
+		return heights.get(n);
 	}
 
 	public void load(Project proj) {
 		int w, h, x, y, z;
-		for (int i = 0; i < sprites.length; ++i) {
-			sprites[i] = new Image[4];
+		// TODO: this needs to be updated to be dynamic, but on testing it seems like this code is
+		// never actually run. I'm stopping here because it's working.
+		for (int i = 0; i < 464; ++i) {
+			sprites.add(new Image[4]);
 			try {
 				BufferedImage sheet = ImageIO.read(new File(proj.getFilename(
 						"eb.SpriteGroupModule",
 						"SpriteGroups/" + ToolModule.addZeros(i+"", 3))));
 				Graphics2D sg = sheet.createGraphics();
 				w = sheet.getWidth()/4;
-				widths[i] = w;
+				widths.add(w);
 				h = sheet.getHeight()/4;
-				heights[i] = h;
+				heights.add(h);
 				z = 0;
 				for (y=0; y<2; ++y) {
 					for (x=0; x<4; x += 2) {
@@ -68,7 +71,7 @@ public class SpriteLoader extends ToolModule {
 						g.setComposite(sg.getComposite());
 						g.drawImage(sheet, 0, 0, w, h, w*x, h*y, w*x+w, h*y+h, null);
 						g.dispose();
-						sprites[i][z] = sp;
+						sprites.get(i)[z] = sp;
 						++z;
 					}
 				}

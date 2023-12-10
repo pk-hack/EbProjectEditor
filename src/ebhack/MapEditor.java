@@ -474,7 +474,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		private int movingDrawX, movingDrawY;
 		private int movingNPC = -1;
 		private Image movingNPCimg;
-		private int[] movingNPCdim;
+		private Integer[] movingNPCdim;
 		private MapData.Door movingDoor = null;
 
 		// Popup menus
@@ -684,7 +684,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 			if (drawSprites) {
 				MapData.NPC npc;
-				int[] wh;
+				Integer[] wh;
 				List<MapData.SpriteEntry> area;
 				for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
 					for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
@@ -1914,9 +1914,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 		private Sector[][] sectors;
 		private ArrayList<SpriteEntry>[][] spriteAreas;
 		private ArrayList<Door>[][] doorAreas;
-		private NPC[] npcs;
-		private static Image[][] spriteGroups;
-		private static int[][] spriteGroupDims;
+		private ArrayList<NPC> npcs;
+		private static ArrayList<Image[]> spriteGroups;
+		private static ArrayList<Integer[]> spriteGroupDims;
 		private int[][] enemyPlacement;
 		private Hotspot[] hotspots;
 
@@ -1938,9 +1938,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 			for (int i = 0; i < doorAreas.length; ++i)
 				for (int j = 0; j < doorAreas[i].length; ++j)
 					doorAreas[i][j] = new ArrayList<Door>();
-			npcs = new NPC[1584];
-			spriteGroups = new Image[464][4];
-			spriteGroupDims = new int[464][2];
+			npcs = new ArrayList<NPC>();
+			spriteGroups = new ArrayList<Image[]>();
+			spriteGroupDims = new ArrayList<Integer[]>();
 			enemyPlacement = new int[HEIGHT_IN_TILES / 2][WIDTH_IN_TILES / 2];
 			hotspots = new Hotspot[56];
 			for (int i = 0; i < hotspots.length; ++i)
@@ -1959,7 +1959,6 @@ public class MapEditor extends ToolModule implements ActionListener,
 					"map_enemy_placement")));
 			importHotspots(new File(proj.getFilename("eb.MiscTablesModule",
 					"map_hotspots")));
-
 			loadExtraResources(proj);
 		}
 
@@ -1984,22 +1983,22 @@ public class MapEditor extends ToolModule implements ActionListener,
 		}
 
 		public NPC getNPC(int n) {
-			return npcs[n];
+			return npcs.get(n);
 		}
 
-		public int[] getSpriteWH(int n) {
-			return spriteGroupDims[n];
+		public Integer[] getSpriteWH(int n) {
+			return spriteGroupDims.get(n);
 		}
 
 		// Sprite Editing
 
 		public SpriteEntry getSpriteEntryFromCoords(int areaX, int areaY,
 				int x, int y) {
-			int[] wh;
+			Integer[] wh;
 			NPC npc;
 			for (SpriteEntry e : spriteAreas[areaY][areaX]) {
-				npc = npcs[e.npcID];
-				wh = spriteGroupDims[npc.sprite];
+				npc = npcs.get(e.npcID);
+				wh = spriteGroupDims.get(npc.sprite);
 				if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
 						&& (e.y >= y - wh[1] / 2) && (e.y <= y + wh[1] / 2)) {
 					return e;
@@ -2009,11 +2008,11 @@ public class MapEditor extends ToolModule implements ActionListener,
 		}
 
 		public int popNPCFromCoords(int areaX, int areaY, int x, int y) {
-			int[] wh;
+			Integer[] wh;
 			NPC npc;
 			for (SpriteEntry e : spriteAreas[areaY][areaX]) {
-				npc = npcs[e.npcID];
-				wh = spriteGroupDims[npc.sprite];
+				npc = npcs.get(e.npcID);
+				wh = spriteGroupDims.get(npc.sprite);
 				if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
 						&& (e.y >= y - wh[1] / 2) && (e.y <= y + wh[1] / 2)) {
 					spriteAreas[areaY][areaX].remove(e);
@@ -2092,7 +2091,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		}
 
 		public Image getSpriteImage(int sprite, int direction) {
-			return spriteGroups[sprite][direction];
+			return spriteGroups.get(sprite)[direction];
 		}
 
 		private void importMapTiles(File f) {
@@ -2130,11 +2129,10 @@ public class MapEditor extends ToolModule implements ActionListener,
 						.load(input);
 
 				NPC npc;
-				for (Map.Entry<Integer, Map<String, Object>> entry : sectorsMap
-						.entrySet()) {
+				for (Map.Entry<Integer, Map<String, Object>> entry : sectorsMap.entrySet()) {
 					npc = new NPC((Integer) entry.getValue().get("Sprite"),
 							(String) entry.getValue().get("Direction"));
-					npcs[entry.getKey()] = npc;
+					npcs.add(npc);
 				}
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -2144,19 +2142,23 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 		private void importSpriteGroups(Project proj) {
 			int w, h, x, y, z;
-			for (int i = 0; i < spriteGroups.length; ++i) {
-				spriteGroups[i] = new Image[4];
+			int i = 0;
+			while (true) {
+				spriteGroups.add(new Image[4]);
 				try {
-					BufferedImage sheet = ImageIO.read(new File(proj
-							.getFilename(
-									"eb.SpriteGroupModule",
-									"SpriteGroups/"
-											+ ToolModule.addZeros(i + "", 3))));
+					// TODO: this was using proj.getFilename. Why does that even exist?
+					String filename = proj.getDirectory() + File.separator + "SpriteGroups" + File.separator
+							+ ToolModule.addZeros(i + "", 3) + ".png";
+					File file = new File(filename);
+					if (!file.exists()) {
+						break;
+					}
+					BufferedImage sheet = ImageIO.read(new File(filename));
 					Graphics2D sg = sheet.createGraphics();
 
 					w = sheet.getWidth() / 4;
 					h = sheet.getHeight() / 4;
-					spriteGroupDims[i] = new int[] { w, h };
+					spriteGroupDims.add(new Integer[] { w, h });
 					z = 0;
 					for (y = 0; y < 2; ++y) {
 						for (x = 0; x < 4; x += 2) {
@@ -2167,7 +2169,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 							g.drawImage(sheet, 0, 0, w, h, w * x, h * y, w * x
 									+ w, h * y + h, null);
 							g.dispose();
-							spriteGroups[i][z] = sp;
+							spriteGroups.get(i)[z] = sp;
 							++z;
 						}
 					}
@@ -2175,6 +2177,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				i++;
 			}
 		}
 
