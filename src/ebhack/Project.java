@@ -158,8 +158,43 @@ public class Project {
     	return path;
     }
     
+    public String getFilenameOrNull(String mod, String fid) {
+        var modResourceMap = ((Map<String,Map<String, String>>) proj.get("resources")).get(mod);
+        if (!modResourceMap.containsKey(fid)) {
+            // Check if a file following the default naming convention exists - if so, add it to the project resource
+            // map.
+            var success = tryFindMissingResource(mod, modResourceMap, fid);
+            if (!success) return null;
+        }
+    	return path + File.separator + modResourceMap.get(fid);
+    }
+
     public String getFilename(String mod, String fid) {
-    	return path + File.separator + ((Map<String,Map<String, String>>) proj.get("resources")).get(mod).get(fid);
+        String result = getFilenameOrNull(mod, fid);
+        if (result == null) {
+            throw new IllegalStateException("Resource '" + mod + "/" + fid +
+                                            "' does not exist in project and cannot be located");
+        }
+        return result;
+    }
+
+    public boolean tryFindMissingResource(String mod, Map<String, String> modResourceMap, String fid) {
+        String defaultFileName = null;
+        switch (mod) {
+            case "eb.SpriteGroupModule":
+                if (fid.startsWith("SpriteGroups/")) {
+                    defaultFileName = fid + ".png";
+                }
+                break;
+        }
+        if (defaultFileName != null) {
+            File f = new File(path + File.separator + defaultFileName);
+            if (f.exists()) {
+                modResourceMap.put(fid, defaultFileName);
+                return true;
+            }
+        }
+        return false;
     }
     
     public void close() {
