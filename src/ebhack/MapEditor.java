@@ -2146,14 +2146,12 @@ public class MapEditor extends ToolModule implements ActionListener,
 			while (true) {
 				spriteGroups.add(new Image[4]);
 				try {
-					// TODO: this was using proj.getFilename. Why does that even exist?
-					String filename = proj.getDirectory() + File.separator + "SpriteGroups" + File.separator
-							+ ToolModule.addZeros(i + "", 3) + ".png";
-					File file = new File(filename);
-					if (!file.exists()) {
+					String spriteResourceFid = "SpriteGroups/" + ToolModule.addZeros(i + "", 3);
+					String spriteFilename = proj.getFilenameOrNull("eb.SpriteGroupModule", spriteResourceFid);
+					if (spriteFilename == null) {
 						break;
 					}
-					BufferedImage sheet = ImageIO.read(new File(filename));
+					BufferedImage sheet = ImageIO.read(new File(spriteFilename));
 					Graphics2D sg = sheet.createGraphics();
 
 					w = sheet.getWidth() / 4;
