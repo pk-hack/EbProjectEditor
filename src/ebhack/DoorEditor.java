@@ -13,8 +13,6 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import ebhack.MapEditor.MapData;
-
 public class DoorEditor extends ToolModule implements ActionListener,
 		DocumentListener {
 
@@ -54,7 +52,7 @@ public class DoorEditor extends ToolModule implements ActionListener,
 	private JTextField destX, destY, style, flagField, textPtr;
 	private JButton seekButton, gotoButton;
 	private JLabel destXhint, destYhint;
-	private MapEditor.MapData.Door door;
+	private MapData.Door door;
 
 	public void init() {
 		mainWindow = createBaseWindow(this);
