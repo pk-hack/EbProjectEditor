@@ -220,23 +220,23 @@ public class MapDisplay extends AbstractButton implements
 
         MapData.Sector sector;
         int pal;
-        for (int i = 0; i < screenHeight; i++) {
-            for (int j = 0; j < screenWidth; j++) {
-                sector = map.getSector((j + x) / MapData.SECTOR_WIDTH,
-                        (i + y) / MapData.SECTOR_HEIGHT);
+        for (int iy = 0; iy < screenHeight; iy++) {
+            for (int ix = 0; ix < screenWidth; ix++) {
+                sector = map.getSector((ix + x) / MapData.SECTOR_WIDTH,
+                        (iy + y) / MapData.SECTOR_HEIGHT);
                 pal = TileEditor.tilesets[TileEditor
                         .getDrawTilesetNumber(sector.tileset)]
                         .getPaletteNum(sector.tileset, sector.palette);
                 g.drawImage(
                         getTileImage(TileEditor
                                 .getDrawTilesetNumber(sector.tileset), map
-                                .getMapTile(x + j, y + i), pal), j
-                                * MapData.TILE_WIDTH + 1, i
+                                .getMapTile(x + ix, y + iy), pal), ix
+                                * MapData.TILE_WIDTH + 1, iy
                                 * MapData.TILE_HEIGHT + 1,
                         MapData.TILE_WIDTH, MapData.TILE_HEIGHT, this);
                 if (drawTileNums && !gamePreview) {
-                    drawNumber(g, map.getMapTile(x + j, y + i), j
-                            * MapData.TILE_WIDTH + 1, i
+                    drawNumber(g, map.getMapTile(x + ix, y + iy), ix
+                            * MapData.TILE_WIDTH + 1, iy
                             * MapData.TILE_HEIGHT + 1, false, false);
                 }
             }
@@ -272,30 +272,30 @@ public class MapDisplay extends AbstractButton implements
             MapData.NPC npc;
             Integer[] wh;
             java.util.List<MapData.SpriteEntry> area;
-            for (int i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (int j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
+            for (int iy = y & (~7); iy < (y & (~7)) + screenHeight + 8; iy += 8) {
+                for (int ix = x & (~7); ix < (x & (~7)) + screenWidth + 8; ix += 8) {
                     try {
-                        area = map.getSpriteArea(j >> 3, i >> 3);
+                        area = map.getSpriteArea(ix >> 3, iy >> 3);
                         for (MapData.SpriteEntry e : area) {
                             npc = map.getNPC(e.npcID);
                             wh = map.getSpriteWH(npc.sprite);
                             if (spriteBoxes && !gamePreview) {
                                 g.setPaint(Color.RED);
-                                g.draw(new Rectangle2D.Double(e.x + (j - x)
+                                g.draw(new Rectangle2D.Double(e.x + (ix - x)
                                         * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (i - y) * MapData.TILE_HEIGHT
+                                        e.y + (iy - y) * MapData.TILE_HEIGHT
                                                 - wh[1] + 8, wh[0] + 1,
                                         wh[1] + 1));
                             }
                             g.drawImage(map.getSpriteImage(npc.sprite,
-                                            npc.direction), e.x + (j - x)
+                                            npc.direction), e.x + (ix - x)
                                             * MapData.TILE_WIDTH - wh[0] / 2 + 1,
-                                    e.y + (i - y) * MapData.TILE_HEIGHT
+                                    e.y + (iy - y) * MapData.TILE_HEIGHT
                                             - wh[1] + 9, this);
                             if (drawSpriteNums && !gamePreview) {
-                                drawNumber(g, e.npcID, e.x + (j - x)
+                                drawNumber(g, e.npcID, e.x + (ix - x)
                                                 * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (i - y) * MapData.TILE_HEIGHT
+                                        e.y + (iy - y) * MapData.TILE_HEIGHT
                                                 - wh[1] + 8, false, true);
                             }
                         }
@@ -318,28 +318,28 @@ public class MapDisplay extends AbstractButton implements
 
         if (currentMode.drawDoors()) {
             List<MapData.Door> area;
-            for (int i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (int j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
+            for (int iy = y & (~7); iy < (y & (~7)) + screenHeight + 8; iy += 8) {
+                for (int ix = x & (~7); ix < (x & (~7)) + screenWidth + 8; ix += 8) {
                     try {
-                        area = map.getDoorArea(j >> 3, i >> 3);
+                        area = map.getDoorArea(ix >> 3, iy >> 3);
                         for (MapData.Door e : area) {
                             g.setPaint(e.getColor());
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
+                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
                                     * MapData.TILE_WIDTH + 1, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 1, 8,
+                                    + (iy - y) * MapData.TILE_HEIGHT + 1, 8,
                                     8));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
+                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
                                     * MapData.TILE_WIDTH + 3, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 3, 4,
+                                    + (iy - y) * MapData.TILE_HEIGHT + 3, 4,
                                     4));
                             g.setPaint(Color.WHITE);
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
+                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
                                     * MapData.TILE_WIDTH + 2, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 2, 6,
+                                    + (iy - y) * MapData.TILE_HEIGHT + 2, 6,
                                     6));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
+                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
                                     * MapData.TILE_WIDTH + 4, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 4, 2,
+                                    + (iy - y) * MapData.TILE_HEIGHT + 4, 2,
                                     2));
                         }
                     } catch (Exception e) {
@@ -378,11 +378,11 @@ public class MapDisplay extends AbstractButton implements
 
         if (currentMode.drawEnemies()) {
             g.setFont(new Font("Arial", Font.PLAIN, 12));
-            for (int i = -(y % 2); i < screenHeight; i += 2) {
-                for (int j = -(x % 2); j < screenWidth; j += 2) {
+            for (int iy = -(y % 2); iy < screenHeight; iy += 2) {
+                for (int ix = -(x % 2); ix < screenWidth; ix += 2) {
                     // Draw the grid
-                    Rectangle2D rect = new Rectangle2D.Double(j
-                            * MapData.TILE_WIDTH + 1, i
+                    Rectangle2D rect = new Rectangle2D.Double(ix
+                            * MapData.TILE_WIDTH + 1, iy
                             * MapData.TILE_HEIGHT + 1,
                             MapData.TILE_WIDTH * 2, MapData.TILE_HEIGHT * 2);
                     if (grid && !gamePreview) {
@@ -390,16 +390,16 @@ public class MapDisplay extends AbstractButton implements
                         g.draw(rect);
                     }
 
-                    int a = map.getMapEnemyGroup((x + j) / 2, (y + i) / 2);
-                    if (a != 0) {
+                    int enemyGroup = map.getMapEnemyGroup((x + ix) / 2, (y + iy) / 2);
+                    if (enemyGroup != 0) {
                         g.setComposite(AlphaComposite.getInstance(
                                 AlphaComposite.SRC_OVER, 0.5F));
-                        g.setPaint(enemyColors[a]);
+                        g.setPaint(enemyColors[enemyGroup]);
                         g.fill(rect);
 
                         g.setComposite(AlphaComposite.getInstance(
                                 AlphaComposite.SRC_OVER, 1.0F));
-                        drawNumber(g, a, j * MapData.TILE_WIDTH + 1, i
+                        drawNumber(g, enemyGroup, ix * MapData.TILE_WIDTH + 1, iy
                                 * MapData.TILE_HEIGHT + 1, false, false);
                     }
                 }
