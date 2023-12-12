@@ -753,8 +753,8 @@ public class MapDisplay extends AbstractButton implements
                 }
             } else if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX(); // Don't use translated coords
-                    popupY = e.getY();
+                    popupX = mouseX;
+                    popupY = mouseY;
                     popupSE = getSpriteEntryFromMouseXY(mouseX, mouseY);
                     if (popupSE == null) {
                         detailsNPC.setText("No Sprite Selected");
@@ -765,9 +765,9 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(false);
                         moveNPC.setEnabled(false);
                     } else {
-                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / 8)
+                        final int areaX = ((screenX + mouseX / MapData.TILE_WIDTH) / 8)
                                 * MapData.TILE_WIDTH * 8;
-                        final int areaY = ((screenY + popupY
+                        final int areaY = ((screenY + mouseY
                                 / MapData.TILE_HEIGHT) / 8)
                                 * MapData.TILE_HEIGHT * 8;
                         detailsNPC.setText("Sprite @ ("
@@ -781,12 +781,13 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(true);
                         moveNPC.setEnabled(true);
                     }
-                    spritePopupMenu.show(this, mouseX, mouseY);
+                    // Don't use translated coords
+                    spritePopupMenu.show(this, e.getX(), e.getY());
                 }
             } else if (currentMode == MapMode.DOOR) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX(); // Don't use translated coords
-                    popupY = e.getY();
+                    popupX = mouseX;
+                    popupY = mouseY;
                     popupDoor = getDoorFromMouseXY(mouseX, mouseY);
                     if (popupDoor == null) {
                         detailsDoor.setText("No Door Selected");
@@ -796,9 +797,9 @@ public class MapDisplay extends AbstractButton implements
                         editDoor.setEnabled(false);
                         jumpDoor.setEnabled(false);
                     } else {
-                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
+                        final int areaX = ((screenX + mouseX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
                                 * MapData.SECTOR_WIDTH * (MapData.TILE_WIDTH / 8);
-                        final int areaY = ((screenY + popupY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
+                        final int areaY = ((screenY + mouseY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
                                 * MapData.SECTOR_HEIGHT * (MapData.TILE_HEIGHT / 8);
                         detailsDoor.setText(ToolModule
                                 .capitalize(popupDoor.type)
@@ -813,7 +814,8 @@ public class MapDisplay extends AbstractButton implements
                         jumpDoor.setEnabled(popupDoor.type.equals("door"));
 
                     }
-                    doorPopupMenu.show(this, mouseX, mouseY);
+                    // Don't use translated coords
+                    doorPopupMenu.show(this, e.getX(), e.getY());
                 }
             } else if (currentMode == MapMode.SEEK_DOOR) {
                 doorSeeker.seek(screenX * 4 + seekDrawX / 8, screenY * 4 + seekDrawY
