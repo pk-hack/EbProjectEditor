@@ -88,8 +88,8 @@ public class MapDisplay extends AbstractButton implements
     private int hsMouseX, hsMouseY;
 
     // Mode settings
-    private MapMode previousMode = MapMode.MAP;
-    private MapMode togglePreviousMode = null;
+    private MapMode currentMode = MapMode.MAP;
+    private MapMode previousMode = null;
     private boolean editMap = true, drawTileNums = false;
     private boolean drawSprites = false, editSprites = false,
             drawSpriteNums = true;
@@ -731,7 +731,7 @@ public class MapDisplay extends AbstractButton implements
                 doorSeeker.seek(x * 4 + seekDrawX / 8, y * 4 + seekDrawY
                         / 8);
                 doorSeeker = null;
-                changeMode(previousMode);
+                changeMode(currentMode);
                 repaint();
             } else if (editEnemies) {
                 int eX = ((e.getX() - 1) / MapData.TILE_WIDTH + x) / 2;
@@ -925,8 +925,8 @@ public class MapDisplay extends AbstractButton implements
     public void mousePressed(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
-            if (togglePreviousMode == null) {
-                togglePreviousMode = previousMode;
+            if (previousMode == null) {
+                previousMode = currentMode;
                 changeMode(MapMode.PREVIEW);
 
                 tvPreview = true;
@@ -969,9 +969,9 @@ public class MapDisplay extends AbstractButton implements
     public void mouseReleased(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
         if (e.getButton() == 1) {
-            if (togglePreviousMode == null) {
-                changeMode(togglePreviousMode);
-                togglePreviousMode = null;
+            if (previousMode != null) {
+                changeMode(previousMode);
+                previousMode = null;
                 this.setCursor(Cursor.getDefaultCursor());
                 tvPreview = false;
                 repaint();
@@ -1065,7 +1065,7 @@ public class MapDisplay extends AbstractButton implements
             pasteSector2.setEnabled(false);
         }
 
-        previousMode = mode;
+        currentMode = mode;
         switch (mode) {
             case MAP:
                 editMap = true;
