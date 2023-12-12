@@ -90,12 +90,11 @@ public class MapDisplay extends AbstractButton implements
     // Mode settings
     private MapMode currentMode = MapMode.MAP;
     private MapMode previousMode = null;
-    private boolean editMap = true, drawTileNums = false;
-    private boolean drawSprites = false, editSprites = false,
-            drawSpriteNums = true;
-    private boolean drawDoors = false, editDoors = false, seekDoor = false;
-    private boolean drawEnemies = false, editEnemies = false;
-    private boolean drawHotspots = false, editHotspots = false;
+    private boolean drawTileNums = false;
+    private boolean drawSprites = false, drawSpriteNums = true;
+    private boolean drawDoors = false, seekDoor = false;
+    private boolean drawEnemies = false;
+    private boolean drawHotspots = false;
     private boolean gamePreview = false;
     private boolean tvPreview = false;
     private int tvPreviewX, tvPreviewY, tvPreviewW, tvPreviewH;
@@ -250,7 +249,7 @@ public class MapDisplay extends AbstractButton implements
         if (grid && !gamePreview && !drawEnemies)
             drawGrid(g);
 
-        if (editMap && (selectedSector != null)) {
+        if (currentMode == MapMode.MAP && (selectedSector != null)) {
             int sXt, sYt;
             if (((sXt = sectorX * MapData.SECTOR_WIDTH)
                     + MapData.SECTOR_WIDTH >= x)
@@ -310,7 +309,7 @@ public class MapDisplay extends AbstractButton implements
                 }
             }
 
-            if (editSprites && (movingNPC != -1)) {
+            if (currentMode == MapMode.SPRITE && (movingNPC != -1)) {
                 if (spriteBoxes) {
                     g.setPaint(Color.RED);
                     g.draw(new Rectangle2D.Double(movingDrawX - 1,
@@ -353,7 +352,7 @@ public class MapDisplay extends AbstractButton implements
                 }
             }
 
-            if (editDoors && (movingDoor != null)) {
+            if (currentMode == MapMode.DOOR && (movingDoor != null)) {
                 g.setPaint(movingDoor.getColor());
                 g.draw(new Rectangle2D.Double(movingDrawX + 1,
                         movingDrawY + 1, 8, 8));
@@ -440,7 +439,7 @@ public class MapDisplay extends AbstractButton implements
                 }
             }
 
-            if (editHotspots && (editHS != null)) {
+            if (currentMode == MapMode.HOTSPOT && (editHS != null)) {
                 g.setPaint(Color.WHITE);
                 if (editHSx1 != -1) {
                     tx1 = editHSx1 * 8 - x * MapData.TILE_WIDTH + 1;
@@ -637,7 +636,7 @@ public class MapDisplay extends AbstractButton implements
                 && (e.getX() <= screenWidth * MapData.TILE_WIDTH + 2)
                 && (e.getY() >= 1)
                 && (e.getY() <= screenHeight * MapData.TILE_HEIGHT + 2)) {
-            if (editMap) {
+            if (currentMode == MapMode.MAP) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     int mX = (e.getX() - 1) / MapData.TILE_WIDTH + x;
                     int mY = (e.getY() - 1) / MapData.TILE_HEIGHT + y;
@@ -663,7 +662,7 @@ public class MapDisplay extends AbstractButton implements
                             / MapData.SECTOR_HEIGHT;
                     selectSector(sX, sY);
                 }
-            } else if (editSprites) {
+            } else if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     popupX = e.getX();
                     popupY = e.getY();
@@ -695,7 +694,7 @@ public class MapDisplay extends AbstractButton implements
                     }
                     spritePopupMenu.show(this, e.getX(), e.getY());
                 }
-            } else if (editDoors) {
+            } else if (currentMode == MapMode.DOOR) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     popupX = e.getX();
                     popupY = e.getY();
@@ -733,7 +732,7 @@ public class MapDisplay extends AbstractButton implements
                 doorSeeker = null;
                 changeMode(currentMode);
                 repaint();
-            } else if (editEnemies) {
+            } else if (currentMode == MapMode.ENEMY) {
                 int eX = ((e.getX() - 1) / MapData.TILE_WIDTH + x) / 2;
                 int eY = ((e.getY() - 1) / MapData.TILE_HEIGHT + y) / 2;
                 if (e.isShiftDown()) {
@@ -743,7 +742,7 @@ public class MapDisplay extends AbstractButton implements
                             tileSelector.getSelectedTile());
                     repaint();
                 }
-            } else if (editHotspots) {
+            } else if (currentMode == MapMode.HOTSPOT) {
                 int mx = ((e.getX() - 1) / 8) + (x * 4), my = ((e.getY() - 1) / 8)
                         + (y * 4);
                 if (editHS != null) {
@@ -944,7 +943,7 @@ public class MapDisplay extends AbstractButton implements
                 repaint();
             }
         } else if (e.getButton() == MouseEvent.BUTTON1) {
-            if (editSprites && (movingNPC == -1)) {
+            if (currentMode == MapMode.SPRITE && (movingNPC == -1)) {
                 movingNPC = popNpcIdFromMouseXY(mx, my);
                 if (movingNPC != -1) {
                     MapData.NPC tmp = map.getNPC(movingNPC);
@@ -955,7 +954,7 @@ public class MapDisplay extends AbstractButton implements
                     movingDrawY = my - movingNPCdim[1] + 9;
                     repaint();
                 }
-            } else if (editDoors && (movingDoor == null)) {
+            } else if (currentMode == MapMode.DOOR && (movingDoor == null)) {
                 movingDoor = popDoorFromMouseXY(mx, my);
                 if (movingDoor != null) {
                     movingDrawX = mx & (~7);
@@ -975,11 +974,11 @@ public class MapDisplay extends AbstractButton implements
                 this.setCursor(Cursor.getDefaultCursor());
                 tvPreview = false;
                 repaint();
-            } else if (editSprites && (movingNPC != -1)) {
+            } else if (currentMode == MapMode.SPRITE && (movingNPC != -1)) {
                 pushNpcIdFromMouseXY(movingNPC, mx, my);
                 movingNPC = -1;
                 repaint();
-            } else if (editDoors && (movingDoor != null)) {
+            } else if (currentMode == MapMode.DOOR && (movingDoor != null)) {
                 pushDoorFromMouseXY(movingDoor, mx, my);
                 movingDoor = null;
                 repaint();
@@ -1023,7 +1022,7 @@ public class MapDisplay extends AbstractButton implements
             seekDrawX = e.getX() & (~7);
             seekDrawY = e.getY() & (~7);
             repaint();
-        } else if (editHotspots && (editHS != null)) {
+        } else if (currentMode == MapMode.HOTSPOT && (editHS != null)) {
             hsMouseX = e.getX() & (~7);
             hsMouseY = e.getY() & (~7);
             repaint();
@@ -1068,100 +1067,60 @@ public class MapDisplay extends AbstractButton implements
         currentMode = mode;
         switch (mode) {
             case MAP:
-                editMap = true;
                 drawSprites = false;
-                editSprites = false;
                 drawDoors = false;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
             case SPRITE:
-                editMap = false;
                 drawSprites = true;
-                editSprites = true;
                 drawDoors = false;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
             case DOOR:
-                editMap = false;
                 drawSprites = false;
-                editSprites = false;
                 drawDoors = true;
-                editDoors = true;
                 seekDoor = false;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
             case SEEK_DOOR:
-                editMap = false;
                 drawSprites = true;
-                editSprites = false;
                 drawDoors = true;
-                editDoors = false;
                 seekDoor = true;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
             case HOTSPOT:
-                editMap = false;
                 drawSprites = false;
-                editSprites = false;
                 drawDoors = false;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = true;
-                editHotspots = true;
                 break;
             case ENEMY:
-                editMap = false;
                 drawSprites = false;
-                editSprites = false;
                 drawDoors = false;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = true;
-                editEnemies = true;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
             case VIEW_ALL:
-                editMap = false;
                 drawSprites = true;
-                editSprites = false;
                 drawDoors = true;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = true;
-                editEnemies = false;
                 drawHotspots = true;
-                editHotspots = false;
                 break;
             case PREVIEW:
-                editMap = false;
                 drawSprites = true;
-                editSprites = false;
                 drawDoors = false;
-                editDoors = false;
                 seekDoor = false;
                 drawEnemies = false;
-                editEnemies = false;
                 drawHotspots = false;
-                editHotspots = false;
                 break;
         }
     }
