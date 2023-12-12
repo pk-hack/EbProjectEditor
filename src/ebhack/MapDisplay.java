@@ -92,7 +92,7 @@ public class MapDisplay extends AbstractButton implements
     private MapMode previousMode = null;
     private boolean drawTileNums = false;
     private boolean drawSprites = false, drawSpriteNums = true;
-    private boolean drawDoors = false, seekDoor = false;
+    private boolean drawDoors = false;
     private boolean drawEnemies = false;
     private boolean drawHotspots = false;
     private boolean gamePreview = false;
@@ -365,7 +365,7 @@ public class MapDisplay extends AbstractButton implements
                         movingDrawY + 4, 2, 2));
             }
 
-            if (seekDoor) {
+            if (currentMode == MapMode.SEEK_DOOR) {
                 g.setPaint(Color.WHITE);
                 g.draw(new Rectangle2D.Double(seekDrawX + 1, seekDrawY + 1,
                         8, 8));
@@ -726,7 +726,7 @@ public class MapDisplay extends AbstractButton implements
                     }
                     doorPopupMenu.show(this, e.getX(), e.getY());
                 }
-            } else if (seekDoor) {
+            } else if (currentMode == MapMode.SEEK_DOOR) {
                 doorSeeker.seek(x * 4 + seekDrawX / 8, y * 4 + seekDrawY
                         / 8);
                 doorSeeker = null;
@@ -1018,7 +1018,7 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseMoved(MouseEvent e) {
-        if (seekDoor) {
+        if (currentMode == MapMode.SEEK_DOOR) {
             seekDrawX = e.getX() & (~7);
             seekDrawY = e.getY() & (~7);
             repaint();
@@ -1069,56 +1069,48 @@ public class MapDisplay extends AbstractButton implements
             case MAP:
                 drawSprites = false;
                 drawDoors = false;
-                seekDoor = false;
                 drawEnemies = false;
                 drawHotspots = false;
                 break;
             case SPRITE:
                 drawSprites = true;
                 drawDoors = false;
-                seekDoor = false;
                 drawEnemies = false;
                 drawHotspots = false;
                 break;
             case DOOR:
                 drawSprites = false;
                 drawDoors = true;
-                seekDoor = false;
                 drawEnemies = false;
                 drawHotspots = false;
                 break;
             case SEEK_DOOR:
                 drawSprites = true;
                 drawDoors = true;
-                seekDoor = true;
                 drawEnemies = false;
                 drawHotspots = false;
                 break;
             case HOTSPOT:
                 drawSprites = false;
                 drawDoors = false;
-                seekDoor = false;
                 drawEnemies = false;
                 drawHotspots = true;
                 break;
             case ENEMY:
                 drawSprites = false;
                 drawDoors = false;
-                seekDoor = false;
                 drawEnemies = true;
                 drawHotspots = false;
                 break;
             case VIEW_ALL:
                 drawSprites = true;
                 drawDoors = true;
-                seekDoor = false;
                 drawEnemies = true;
                 drawHotspots = true;
                 break;
             case PREVIEW:
                 drawSprites = true;
                 drawDoors = false;
-                seekDoor = false;
                 drawEnemies = false;
                 drawHotspots = false;
                 break;
