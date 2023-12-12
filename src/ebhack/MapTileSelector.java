@@ -11,7 +11,8 @@ import java.awt.geom.Rectangle2D;
 public class MapTileSelector extends AbstractButton implements MouseListener,
         AdjustmentListener {
     private int width, height;
-    private int tile = 0, mode = 0;
+    private int tile = 0;
+    private MapMode mode = MapMode.MAP;
     private JScrollBar scroll;
 
     private final JComboBox tilesetChooser;
@@ -32,7 +33,7 @@ public class MapTileSelector extends AbstractButton implements MouseListener,
         setPreferredSize(new Dimension(width * MapData.TILE_WIDTH + 3,
                 height * MapData.TILE_HEIGHT + 3));
 
-        changeMode(0);
+        changeMode(MapMode.MAP);
 
         this.addMouseListener(this);
     }
@@ -53,14 +54,14 @@ public class MapTileSelector extends AbstractButton implements MouseListener,
         }
     }
 
-    public void changeMode(int mode) {
+    public void changeMode(MapMode mode) {
         this.mode = mode;
         tile = 0;
-        if (mode == 7) {
+        if (mode == MapMode.ENEMY) {
             scroll.setEnabled(true);
             scroll.setMaximum(203 / (height) + 1);
             tile = Math.min(202, tile);
-        } else if (mode == 0) {
+        } else if (mode == MapMode.MAP) {
             scroll.setEnabled(true);
             scroll.setMaximum(1024 / (height) + 1);
         } else {
@@ -91,9 +92,9 @@ public class MapTileSelector extends AbstractButton implements MouseListener,
         Graphics2D g2d = (Graphics2D) g;
 
         if (isEnabled()) {
-            if (mode == 0)
+            if (mode == MapMode.MAP)
                 drawTiles(g2d);
-            else if (mode == 7)
+            else if (mode == MapMode.ENEMY)
                 drawEnemies(g2d);
             drawGrid(g2d);
         } else {
@@ -201,9 +202,9 @@ public class MapTileSelector extends AbstractButton implements MouseListener,
                     .getValue())
                     * height
                     + ((e.getY() - 1) / MapData.TILE_HEIGHT);
-            if (mode == 0)
+            if (mode == MapMode.MAP)
                 tile = Math.min(tile, 1023);
-            else if (mode == 7)
+            else if (mode == MapMode.ENEMY)
                 tile = Math.min(tile, 202);
             repaint();
             if (e.isShiftDown()) {

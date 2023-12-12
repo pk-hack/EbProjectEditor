@@ -654,39 +654,39 @@ public class MapEditor extends ToolModule implements ActionListener,
 		} else if (e.getActionCommand().equals("close")) {
 			hide();
 		} else if (e.getActionCommand().equals("mode0")) {
-			mapDisplay.changeMode(0);
+			mapDisplay.changeMode(MapMode.MAP);
 			mapDisplay.repaint();
-			tileSelector.changeMode(0);
+			tileSelector.changeMode(MapMode.MAP);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode1")) {
-			mapDisplay.changeMode(1);
+			mapDisplay.changeMode(MapMode.SPRITE);
 			mapDisplay.repaint();
-			tileSelector.changeMode(1);
+			tileSelector.changeMode(MapMode.SPRITE);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode2")) {
-			mapDisplay.changeMode(2);
+			mapDisplay.changeMode(MapMode.DOOR);
 			mapDisplay.repaint();
-			tileSelector.changeMode(2);
+			tileSelector.changeMode(MapMode.DOOR);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode6")) {
-			mapDisplay.changeMode(6);
+			mapDisplay.changeMode(MapMode.HOTSPOT);
 			mapDisplay.repaint();
-			tileSelector.changeMode(6);
+			tileSelector.changeMode(MapMode.HOTSPOT);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode7")) {
-			mapDisplay.changeMode(7);
+			mapDisplay.changeMode(MapMode.ENEMY);
 			mapDisplay.repaint();
-			tileSelector.changeMode(7);
+			tileSelector.changeMode(MapMode.ENEMY);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode8")) {
-			mapDisplay.changeMode(8);
+			mapDisplay.changeMode(MapMode.VIEW_ALL);
 			mapDisplay.repaint();
-			tileSelector.changeMode(8);
+			tileSelector.changeMode(MapMode.VIEW_ALL);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("mode9")) {
-			mapDisplay.changeMode(9);
+			mapDisplay.changeMode(MapMode.PREVIEW);
 			mapDisplay.repaint();
-			tileSelector.changeMode(9);
+			tileSelector.changeMode(MapMode.PREVIEW);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("delAllSprites")) {
 			int sure = JOptionPane
