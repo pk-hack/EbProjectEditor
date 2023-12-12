@@ -88,8 +88,8 @@ public class MapDisplay extends AbstractButton implements
     private int hsMouseX, hsMouseY;
 
     // Mode settings
-    private int previousMode = 0;
-    private int togglePreviousMode = -1;
+    private MapMode previousMode = MapMode.MAP;
+    private MapMode togglePreviousMode = null;
     private boolean editMap = true, drawTileNums = false;
     private boolean drawSprites = false, editSprites = false,
             drawSpriteNums = true;
@@ -189,7 +189,7 @@ public class MapDisplay extends AbstractButton implements
 
     public void init() {
         selectSector(0, 0);
-        changeMode(0);
+        changeMode(MapMode.MAP);
         reset();
     }
 
@@ -925,9 +925,9 @@ public class MapDisplay extends AbstractButton implements
     public void mousePressed(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
-            if (togglePreviousMode == -1) {
+            if (togglePreviousMode == null) {
                 togglePreviousMode = previousMode;
-                changeMode(9);
+                changeMode(MapMode.PREVIEW);
 
                 tvPreview = true;
                 tvPreviewX = e.getX();
@@ -969,9 +969,9 @@ public class MapDisplay extends AbstractButton implements
     public void mouseReleased(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
         if (e.getButton() == 1) {
-            if (togglePreviousMode != -1) {
+            if (togglePreviousMode == null) {
                 changeMode(togglePreviousMode);
-                togglePreviousMode = -1;
+                togglePreviousMode = null;
                 this.setCursor(Cursor.getDefaultCursor());
                 tvPreview = false;
                 repaint();
@@ -1046,10 +1046,10 @@ public class MapDisplay extends AbstractButton implements
         }
     }
 
-    public void changeMode(int mode) {
-        gamePreview = mode == 9;
+    public void changeMode(MapMode mode) {
+        gamePreview = mode == MapMode.PREVIEW;
 
-        if (mode == 0) {
+        if (mode == MapMode.MAP) {
             undoButton.setEnabled(!undoStack.isEmpty());
             redoButton.setEnabled(!redoStack.isEmpty());
             copySector.setEnabled(selectedSector != null);
@@ -1065,114 +1065,109 @@ public class MapDisplay extends AbstractButton implements
             pasteSector2.setEnabled(false);
         }
 
-        if (mode == 0) {
-            previousMode = mode;
-            // Map Mode
-            editMap = true;
-            drawSprites = false;
-            editSprites = false;
-            drawDoors = false;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = false;
-            editHotspots = false;
-        } else if (mode == 1) {
-            previousMode = mode;
-            // Sprite Mode
-            editMap = false;
-            drawSprites = true;
-            editSprites = true;
-            drawDoors = false;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = false;
-            editHotspots = false;
-        } else if (mode == 2) {
-            previousMode = mode;
-            // Door Mode
-            editMap = false;
-            drawSprites = false;
-            editSprites = false;
-            drawDoors = true;
-            editDoors = true;
-            seekDoor = false;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = false;
-            editHotspots = false;
-        } else if (mode == 4) {
-            // Seek Door Mode
-            editMap = false;
-            drawSprites = true;
-            editSprites = false;
-            drawDoors = true;
-            editDoors = false;
-            seekDoor = true;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = false;
-            editHotspots = false;
-        } else if (mode == 6) {
-            previousMode = mode;
-            // Hotspot Mode
-            editMap = false;
-            drawSprites = false;
-            editSprites = false;
-            drawDoors = false;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = true;
-            editHotspots = true;
-        } else if (mode == 7) {
-            previousMode = mode;
-            // Enemy Mode
-            editMap = false;
-            drawSprites = false;
-            editSprites = false;
-            drawDoors = false;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = true;
-            editEnemies = true;
-            drawHotspots = false;
-            editHotspots = false;
-        } else if (mode == 8) {
-            previousMode = mode;
-            // View All
-            editMap = false;
-            drawSprites = true;
-            editSprites = false;
-            drawDoors = true;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = true;
-            editEnemies = false;
-            drawHotspots = true;
-            editHotspots = false;
-        } else if (mode == 9) {
-            previousMode = mode;
-            // Preview
-            editMap = false;
-            drawSprites = true;
-            editSprites = false;
-            drawDoors = false;
-            editDoors = false;
-            seekDoor = false;
-            drawEnemies = false;
-            editEnemies = false;
-            drawHotspots = false;
-            editHotspots = false;
+        previousMode = mode;
+        switch (mode) {
+            case MAP:
+                editMap = true;
+                drawSprites = false;
+                editSprites = false;
+                drawDoors = false;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
+            case SPRITE:
+                editMap = false;
+                drawSprites = true;
+                editSprites = true;
+                drawDoors = false;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
+            case DOOR:
+                editMap = false;
+                drawSprites = false;
+                editSprites = false;
+                drawDoors = true;
+                editDoors = true;
+                seekDoor = false;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
+            case SEEK_DOOR:
+                editMap = false;
+                drawSprites = true;
+                editSprites = false;
+                drawDoors = true;
+                editDoors = false;
+                seekDoor = true;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
+            case HOTSPOT:
+                editMap = false;
+                drawSprites = false;
+                editSprites = false;
+                drawDoors = false;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = true;
+                editHotspots = true;
+                break;
+            case ENEMY:
+                editMap = false;
+                drawSprites = false;
+                editSprites = false;
+                drawDoors = false;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = true;
+                editEnemies = true;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
+            case VIEW_ALL:
+                editMap = false;
+                drawSprites = true;
+                editSprites = false;
+                drawDoors = true;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = true;
+                editEnemies = false;
+                drawHotspots = true;
+                editHotspots = false;
+                break;
+            case PREVIEW:
+                editMap = false;
+                drawSprites = true;
+                editSprites = false;
+                drawDoors = false;
+                editDoors = false;
+                seekDoor = false;
+                drawEnemies = false;
+                editEnemies = false;
+                drawHotspots = false;
+                editHotspots = false;
+                break;
         }
     }
 
     public void seek(DoorEditor de) {
-        changeMode(4);
+        changeMode(MapMode.SEEK_DOOR);
         doorSeeker = de;
     }
 
