@@ -215,14 +215,13 @@ public class MapDisplay extends AbstractButton implements
     }
 
     private void drawMap(Graphics2D g) {
-        int i, j, a;
         g.setPaint(Color.white);
         g.setFont(new Font("Arial", Font.PLAIN, 12));
 
         MapData.Sector sector;
         int pal;
-        for (i = 0; i < screenHeight; i++) {
-            for (j = 0; j < screenWidth; j++) {
+        for (int i = 0; i < screenHeight; i++) {
+            for (int j = 0; j < screenWidth; j++) {
                 sector = map.getSector((j + x) / MapData.SECTOR_WIDTH,
                         (i + y) / MapData.SECTOR_HEIGHT);
                 pal = TileEditor.tilesets[TileEditor
@@ -273,8 +272,8 @@ public class MapDisplay extends AbstractButton implements
             MapData.NPC npc;
             Integer[] wh;
             java.util.List<MapData.SpriteEntry> area;
-            for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
+            for (int i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
+                for (int j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
                     try {
                         area = map.getSpriteArea(j >> 3, i >> 3);
                         for (MapData.SpriteEntry e : area) {
@@ -319,8 +318,8 @@ public class MapDisplay extends AbstractButton implements
 
         if (currentMode.drawDoors()) {
             List<MapData.Door> area;
-            for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
+            for (int i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
+                for (int j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
                     try {
                         area = map.getDoorArea(j >> 3, i >> 3);
                         for (MapData.Door e : area) {
@@ -379,8 +378,8 @@ public class MapDisplay extends AbstractButton implements
 
         if (currentMode.drawEnemies()) {
             g.setFont(new Font("Arial", Font.PLAIN, 12));
-            for (i = -(y % 2); i < screenHeight; i += 2) {
-                for (j = -(x % 2); j < screenWidth; j += 2) {
+            for (int i = -(y % 2); i < screenHeight; i += 2) {
+                for (int j = -(x % 2); j < screenWidth; j += 2) {
                     // Draw the grid
                     Rectangle2D rect = new Rectangle2D.Double(j
                             * MapData.TILE_WIDTH + 1, i
@@ -391,7 +390,7 @@ public class MapDisplay extends AbstractButton implements
                         g.draw(rect);
                     }
 
-                    a = map.getMapEnemyGroup((x + j) / 2, (y + i) / 2);
+                    int a = map.getMapEnemyGroup((x + j) / 2, (y + i) / 2);
                     if (a != 0) {
                         g.setComposite(AlphaComposite.getInstance(
                                 AlphaComposite.SRC_OVER, 0.5F));
@@ -412,7 +411,7 @@ public class MapDisplay extends AbstractButton implements
             g.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 0.8F));
             int tx1, ty1, tx2, ty2;
-            for (i = 0; i < map.numHotspots(); ++i) {
+            for (int i = 0; i < map.numHotspots(); ++i) {
                 hs = map.getHotspot(i);
                 if (hs == editHS)
                     continue;
