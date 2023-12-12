@@ -91,10 +91,7 @@ public class MapDisplay extends AbstractButton implements
     private MapMode currentMode = MapMode.MAP;
     private MapMode previousMode = null;
     private boolean drawTileNums = false;
-    private boolean drawSprites = false, drawSpriteNums = true;
-    private boolean drawDoors = false;
-    private boolean drawEnemies = false;
-    private boolean drawHotspots = false;
+    private boolean drawSpriteNums = true;
     private boolean gamePreview = false;
     private boolean tvPreview = false;
     private int tvPreviewX, tvPreviewY, tvPreviewW, tvPreviewH;
@@ -246,7 +243,7 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
-        if (grid && !gamePreview && !drawEnemies)
+        if (grid && !gamePreview && !currentMode.drawEnemies())
             drawGrid(g);
 
         if (currentMode == MapMode.MAP && (selectedSector != null)) {
@@ -272,7 +269,7 @@ public class MapDisplay extends AbstractButton implements
                 * MapData.TILE_WIDTH + 2, screenHeight
                 * MapData.TILE_HEIGHT + 2));
 
-        if (drawSprites) {
+        if (currentMode.drawSprites()) {
             MapData.NPC npc;
             Integer[] wh;
             java.util.List<MapData.SpriteEntry> area;
@@ -320,7 +317,7 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
-        if (drawDoors) {
+        if (currentMode.drawDoors()) {
             List<MapData.Door> area;
             for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
                 for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
@@ -380,7 +377,7 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
-        if (drawEnemies) {
+        if (currentMode.drawEnemies()) {
             g.setFont(new Font("Arial", Font.PLAIN, 12));
             for (i = -(y % 2); i < screenHeight; i += 2) {
                 for (j = -(x % 2); j < screenWidth; j += 2) {
@@ -410,7 +407,7 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
-        if (drawHotspots) {
+        if (currentMode.drawHotspots()) {
             MapData.Hotspot hs;
             g.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 0.8F));
@@ -1065,56 +1062,6 @@ public class MapDisplay extends AbstractButton implements
         }
 
         currentMode = mode;
-        switch (mode) {
-            case MAP:
-                drawSprites = false;
-                drawDoors = false;
-                drawEnemies = false;
-                drawHotspots = false;
-                break;
-            case SPRITE:
-                drawSprites = true;
-                drawDoors = false;
-                drawEnemies = false;
-                drawHotspots = false;
-                break;
-            case DOOR:
-                drawSprites = false;
-                drawDoors = true;
-                drawEnemies = false;
-                drawHotspots = false;
-                break;
-            case SEEK_DOOR:
-                drawSprites = true;
-                drawDoors = true;
-                drawEnemies = false;
-                drawHotspots = false;
-                break;
-            case HOTSPOT:
-                drawSprites = false;
-                drawDoors = false;
-                drawEnemies = false;
-                drawHotspots = true;
-                break;
-            case ENEMY:
-                drawSprites = false;
-                drawDoors = false;
-                drawEnemies = true;
-                drawHotspots = false;
-                break;
-            case VIEW_ALL:
-                drawSprites = true;
-                drawDoors = true;
-                drawEnemies = true;
-                drawHotspots = true;
-                break;
-            case PREVIEW:
-                drawSprites = true;
-                drawDoors = false;
-                drawEnemies = false;
-                drawHotspots = false;
-                break;
-        }
     }
 
     public void seek(DoorEditor de) {

@@ -11,4 +11,20 @@ public enum MapMode {
     ENEMY, // 7
     VIEW_ALL, // 8
     PREVIEW; // 9
+
+    public boolean drawSprites() {
+        return this == SPRITE || this == SEEK_DOOR
+                || this == VIEW_ALL || this == PREVIEW;
+    }
+
+    public boolean drawDoors() {
+        return this == DOOR || this == SEEK_DOOR || this == VIEW_ALL;
+    }
+
+    public boolean drawEnemies() {
+        return this == ENEMY || this == VIEW_ALL;
+    }
+    public boolean drawHotspots() {
+        return this == HOTSPOT || this == VIEW_ALL;
+    }
 }
