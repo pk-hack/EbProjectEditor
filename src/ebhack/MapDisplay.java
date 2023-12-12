@@ -55,6 +55,9 @@ public class MapDisplay extends AbstractButton implements
     private int screenX = 0, screenY = 0;
     // Pixel coordinates of top map X and Y
     private int scrollX = 0, scrollY = 0;
+    // Recent mouse coords for dragging
+    private int mouseDragButton = -1;
+    private int lastMouseX = 0, lastMouseY = 0;
 
     // Data for the selected sector
     private MapData.Sector selectedSector = null;
@@ -968,6 +971,7 @@ public class MapDisplay extends AbstractButton implements
                     new Point(0, 0), "blank cursor");
 
     public void mousePressed(MouseEvent e) {
+        mouseDragButton = e.getButton();
         int mx = translateMouseX(e);
         int my = translateMouseY(e);
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
@@ -1013,6 +1017,7 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseReleased(MouseEvent e) {
+        mouseDragButton = -1;
         int mx = translateMouseX(e);
         int my = translateMouseY(e);
         if (e.getButton() == 1) {
@@ -1048,6 +1053,10 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseDragged(MouseEvent e) {
+        int deltaX = e.getX() - lastMouseX;
+        int deltaY = e.getY() - lastMouseY;
+        lastMouseX = e.getX();
+        lastMouseY = e.getY();
         int mouseX = translateMouseX(e);
         int mouseY = translateMouseY(e);
         if (tvPreview) {
@@ -1062,12 +1071,17 @@ public class MapDisplay extends AbstractButton implements
             movingDrawX = mouseX & (~7);
             movingDrawY = mouseY & (~7);
             repaint();
+        } else if (mouseDragButton == 2) {
+            setMapXYPixel(scrollX - deltaX, scrollY - deltaY);
+            this.repaint();
         }
 
         updateCoordLabels(mouseX, mouseY);
     }
 
     public void mouseMoved(MouseEvent e) {
+        lastMouseX = e.getX();
+        lastMouseY = e.getY();
         int mouseX = translateMouseX(e);
         int mouseY = translateMouseY(e);
         if (currentMode == MapMode.SEEK_DOOR) {
