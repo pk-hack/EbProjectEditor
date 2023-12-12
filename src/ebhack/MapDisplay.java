@@ -271,36 +271,30 @@ public class MapDisplay extends AbstractButton implements
         if (currentMode.drawSprites()) {
             MapData.NPC npc;
             Integer[] wh;
-            java.util.List<MapData.SpriteEntry> area;
             for (int iy = y & (~7); iy < (y & (~7)) + screenHeight + 8; iy += 8) {
                 for (int ix = x & (~7); ix < (x & (~7)) + screenWidth + 8; ix += 8) {
-                    try {
-                        area = map.getSpriteArea(ix >> 3, iy >> 3);
-                        for (MapData.SpriteEntry e : area) {
-                            npc = map.getNPC(e.npcID);
-                            wh = map.getSpriteWH(npc.sprite);
-                            if (spriteBoxes && !gamePreview) {
-                                g.setPaint(Color.RED);
-                                g.draw(new Rectangle2D.Double(e.x + (ix - x)
-                                        * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (iy - y) * MapData.TILE_HEIGHT
-                                                - wh[1] + 8, wh[0] + 1,
-                                        wh[1] + 1));
-                            }
-                            g.drawImage(map.getSpriteImage(npc.sprite,
-                                            npc.direction), e.x + (ix - x)
-                                            * MapData.TILE_WIDTH - wh[0] / 2 + 1,
+                    for (MapData.SpriteEntry e : map.getSpriteArea(ix >> 3, iy >> 3)) {
+                        npc = map.getNPC(e.npcID);
+                        wh = map.getSpriteWH(npc.sprite);
+                        if (spriteBoxes && !gamePreview) {
+                            g.setPaint(Color.RED);
+                            g.draw(new Rectangle2D.Double(e.x + (ix - x)
+                                    * MapData.TILE_WIDTH - wh[0] / 2,
                                     e.y + (iy - y) * MapData.TILE_HEIGHT
-                                            - wh[1] + 9, this);
-                            if (drawSpriteNums && !gamePreview) {
-                                drawNumber(g, e.npcID, e.x + (ix - x)
-                                                * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (iy - y) * MapData.TILE_HEIGHT
-                                                - wh[1] + 8, false, true);
-                            }
+                                            - wh[1] + 8, wh[0] + 1,
+                                    wh[1] + 1));
                         }
-                    } catch (Exception e) {
-
+                        g.drawImage(map.getSpriteImage(npc.sprite,
+                                        npc.direction), e.x + (ix - x)
+                                        * MapData.TILE_WIDTH - wh[0] / 2 + 1,
+                                e.y + (iy - y) * MapData.TILE_HEIGHT
+                                        - wh[1] + 9, this);
+                        if (drawSpriteNums && !gamePreview) {
+                            drawNumber(g, e.npcID, e.x + (ix - x)
+                                            * MapData.TILE_WIDTH - wh[0] / 2,
+                                    e.y + (iy - y) * MapData.TILE_HEIGHT
+                                            - wh[1] + 8, false, true);
+                        }
                     }
                 }
             }
@@ -317,33 +311,27 @@ public class MapDisplay extends AbstractButton implements
         }
 
         if (currentMode.drawDoors()) {
-            List<MapData.Door> area;
             for (int iy = y & (~7); iy < (y & (~7)) + screenHeight + 8; iy += 8) {
                 for (int ix = x & (~7); ix < (x & (~7)) + screenWidth + 8; ix += 8) {
-                    try {
-                        area = map.getDoorArea(ix >> 3, iy >> 3);
-                        for (MapData.Door e : area) {
-                            g.setPaint(e.getColor());
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
-                                    * MapData.TILE_WIDTH + 1, e.y * 8
-                                    + (iy - y) * MapData.TILE_HEIGHT + 1, 8,
-                                    8));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
-                                    * MapData.TILE_WIDTH + 3, e.y * 8
-                                    + (iy - y) * MapData.TILE_HEIGHT + 3, 4,
-                                    4));
-                            g.setPaint(Color.WHITE);
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
-                                    * MapData.TILE_WIDTH + 2, e.y * 8
-                                    + (iy - y) * MapData.TILE_HEIGHT + 2, 6,
-                                    6));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
-                                    * MapData.TILE_WIDTH + 4, e.y * 8
-                                    + (iy - y) * MapData.TILE_HEIGHT + 4, 2,
-                                    2));
-                        }
-                    } catch (Exception e) {
-
+                    for (MapData.Door e : map.getDoorArea(ix >> 3, iy >> 3)) {
+                        g.setPaint(e.getColor());
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
+                                * MapData.TILE_WIDTH + 1, e.y * 8
+                                + (iy - y) * MapData.TILE_HEIGHT + 1, 8,
+                                8));
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
+                                * MapData.TILE_WIDTH + 3, e.y * 8
+                                + (iy - y) * MapData.TILE_HEIGHT + 3, 4,
+                                4));
+                        g.setPaint(Color.WHITE);
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
+                                * MapData.TILE_WIDTH + 2, e.y * 8
+                                + (iy - y) * MapData.TILE_HEIGHT + 2, 6,
+                                6));
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - x)
+                                * MapData.TILE_WIDTH + 4, e.y * 8
+                                + (iy - y) * MapData.TILE_HEIGHT + 4, 2,
+                                2));
                     }
                 }
             }

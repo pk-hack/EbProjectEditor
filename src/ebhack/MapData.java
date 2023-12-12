@@ -7,10 +7,8 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class MapData {
     public static final int WIDTH_IN_TILES = 32 * 8;
@@ -21,6 +19,7 @@ public class MapData {
             / SECTOR_WIDTH;
     public static final int HEIGHT_IN_SECTORS = HEIGHT_IN_TILES
             / SECTOR_HEIGHT;
+    public static final int HEIGHT_IN_DOUBLE_SECTORS = HEIGHT_IN_TILES / (SECTOR_HEIGHT * 2);
     public static final int TILE_WIDTH = 32;
     public static final int TILE_HEIGHT = 32;
 
@@ -48,11 +47,11 @@ public class MapData {
         for (int i = 0; i < sectors.length; ++i)
             for (int j = 0; j < sectors[i].length; ++j)
                 sectors[i][j] = new Sector();
-        spriteAreas = new ArrayList[HEIGHT_IN_SECTORS / 2][WIDTH_IN_SECTORS];
+        spriteAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
         for (int i = 0; i < spriteAreas.length; ++i)
             for (int j = 0; j < spriteAreas[i].length; ++j)
                 spriteAreas[i][j] = new ArrayList<SpriteEntry>();
-        doorAreas = new ArrayList[HEIGHT_IN_SECTORS / 2][WIDTH_IN_SECTORS];
+        doorAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
         for (int i = 0; i < doorAreas.length; ++i)
             for (int j = 0; j < doorAreas[i].length; ++j)
                 doorAreas[i][j] = new ArrayList<Door>();
@@ -146,13 +145,21 @@ public class MapData {
             spriteAreas[areaY][areaX].add(new SpriteEntry(x, y, npcid));
     }
 
-    public java.util.List<SpriteEntry> getSpriteArea(int areaX, int areaY) {
+    public List<SpriteEntry> getSpriteArea(int areaX, int areaY) {
+        if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
+                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+            return Collections.emptyList();
+        }
         return spriteAreas[areaY][areaX];
     }
 
     // Door Editing
 
     public java.util.List<Door> getDoorArea(int areaX, int areaY) {
+        if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
+                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+            return Collections.emptyList();
+        }
         return doorAreas[areaY][areaX];
     }
 
