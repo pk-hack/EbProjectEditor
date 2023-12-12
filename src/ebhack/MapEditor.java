@@ -327,6 +327,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		mapDisplay.init();
 		contentPanel.add(mapDisplay, BorderLayout.CENTER);
 
+		// Note - xScroll / yScroll bounds get overridden later
 		xScroll = new JScrollBar(JScrollBar.HORIZONTAL, 0,
 				mapDisplay.getScreenWidth(), 0, MapData.WIDTH_IN_TILES);
 		xScroll.addAdjustmentListener(this);
@@ -360,6 +361,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		mainWindow.setLocationByPlatform(true);
 		mainWindow.validate();
 		mainWindow.setResizable(true);
+		updateXYScrollBars();
 	}
 
 	private void loadTilesetNames() {
@@ -395,8 +397,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 			mapDisplay.repaint();
 		} else if (o instanceof int[]) {
 			int[] coords = (int[]) o;
-			mapDisplay.setMapXY(coords[0] / MapData.TILE_WIDTH, coords[1]
-					/ MapData.TILE_HEIGHT);
+			mapDisplay.centerScroll(coords[0], coords[1]);
 			updateXYFields();
 			updateXYScrollBars();
 			mapDisplay.repaint();
@@ -432,10 +433,14 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 	private void updateXYScrollBars() {
 		xScroll.removeAdjustmentListener(this);
-		xScroll.setValue(mapDisplay.getMapX());
+		xScroll.setMinimum(mapDisplay.getMinScrollX());
+		xScroll.setMaximum(mapDisplay.getMaxScrollX());
+		xScroll.setValue(mapDisplay.getScrollX());
 		xScroll.addAdjustmentListener(this);
 		yScroll.removeAdjustmentListener(this);
-		yScroll.setValue(mapDisplay.getMapY());
+		yScroll.setValue(mapDisplay.getScrollY());
+		yScroll.setMinimum(mapDisplay.getMinScrollY());
+		yScroll.setMaximum(mapDisplay.getMaxScrollY());
 		yScroll.addAdjustmentListener(this);
 	}
 
@@ -1002,20 +1007,14 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 	public void adjustmentValueChanged(AdjustmentEvent e) {
 		if (e.getSource().equals(xScroll) || e.getSource().equals(yScroll)) {
-			mapDisplay.setMapXY(xScroll.getValue(), yScroll.getValue());
+			mapDisplay.setMapXYPixel(xScroll.getValue(), yScroll.getValue());
 			updateXYFields();
 			mapDisplay.repaint();
 		}
 	}
 
-	public void setMapXY(int x, int y) {
-		x = Math.min(x, MapData.WIDTH_IN_TILES - mapDisplay.getScreenWidth());
-		x = Math.max(x, 0);
-
-		y = Math.min(y, MapData.HEIGHT_IN_TILES - mapDisplay.getScreenHeight());
-		y = Math.max(y, 0);
-
-		mapDisplay.setMapXY(x, y);
+	public void setMapXYPixel(int x, int y) {
+		mapDisplay.setMapXYPixel(x, y);
 
 		updateXYScrollBars();
 		updateXYFields();
@@ -1030,11 +1029,11 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.isControlDown()) { // Horizontal scrolling
-			setMapXY(mapDisplay.getMapX() + (e.getWheelRotation() * 4),
-					mapDisplay.getMapY());
+			setMapXYPixel(mapDisplay.getScrollX() + (e.getWheelRotation() * 4 * MapData.TILE_WIDTH),
+					mapDisplay.getScrollY());
 		} else { // Vertical scrolling
-			setMapXY(mapDisplay.getMapX(),
-					mapDisplay.getMapY() + (e.getWheelRotation() * 4));
+			setMapXYPixel(mapDisplay.getScrollX(),
+					mapDisplay.getScrollY() + (e.getWheelRotation() * 4 * MapData.TILE_HEIGHT));
 		}
 	}
 
@@ -1053,8 +1052,11 @@ public class MapEditor extends ToolModule implements ActionListener,
 	@Override
 	public void componentResized(ComponentEvent arg0) {
 		Dimension newD = mapDisplay.getSize();
-		int newSW = newD.width / 32, newSH = newD.height / 32;
+		int newSW = (int) Math.ceil(newD.width / 32.0);
+		int newSH = 1 + (int) Math.ceil(newD.height / 32.0);
 		mapDisplay.setScreenSize(newSW, newSH);
+		// Reset this in case they lowered the window size and are now off the side
+		mapDisplay.setMapXYPixel(xScroll.getValue(), yScroll.getValue());
 		updateXYScrollBars();
 		updateXYFields();
 		tileSelector.setScreenSize(newSW);

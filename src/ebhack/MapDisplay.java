@@ -53,6 +53,9 @@ public class MapDisplay extends AbstractButton implements
 
     // Map X and Y coordinates of the tile displayed in the top left corner
     private int screenX = 0, screenY = 0;
+    // Pixel coordinates of top map X and Y
+    private int scrollX = 0, scrollY = 0;
+
     // Data for the selected sector
     private MapData.Sector selectedSector = null;
     private int sectorX, sectorY;
@@ -216,6 +219,11 @@ public class MapDisplay extends AbstractButton implements
     private void drawMap(Graphics2D g) {
         g.setPaint(Color.white);
         g.setFont(new Font("Arial", Font.PLAIN, 12));
+
+        // Translate the screen for smooth scrolling. This entire codebase is built on tile coordinates, so rather than
+        // trying to swap it over, just compare the results and translate that much.
+        g.translate(-(scrollX - MapData.TILE_WIDTH * screenX),
+                -(scrollY - MapData.TILE_HEIGHT * screenY));
 
         MapData.Sector sector;
         int pal;
@@ -556,13 +564,50 @@ public class MapDisplay extends AbstractButton implements
         return sectorPal;
     }
 
+    public int getMinScrollX() {
+        // Half the screen to the left of the map
+        return -screenWidth * MapData.TILE_WIDTH / 2;
+    }
+
+    public int getMaxScrollX() {
+        // Half the screen to the right of the map
+        return (MapData.WIDTH_IN_TILES - screenWidth / 2) * MapData.TILE_WIDTH;
+    }
+
+    public int getMinScrollY() {
+        // Half the screen above the map
+        return -screenHeight * MapData.TILE_HEIGHT / 2;
+    }
+
+    public int getMaxScrollY() {
+        // Half the screen below the map
+        return (MapData.HEIGHT_IN_TILES - screenHeight / 2) * MapData.TILE_HEIGHT;
+    }
+
     public void setMapXY(int x, int y) {
+        setMapXYPixel(x * MapData.TILE_WIDTH, y * MapData.TILE_HEIGHT);
+    }
+
+    public void setMapXYPixel(int x, int y) {
+        x = Math.min(x, getMaxScrollX());
+        x = Math.max(x, getMinScrollX());
+        y = Math.min(y, getMaxScrollY());
+        y = Math.max(y, getMinScrollY());
+        scrollX = x;
+        scrollY = y;
+        x /= MapData.TILE_WIDTH;
+        y /= MapData.TILE_HEIGHT;
         x = Math.max(0, x);
         y = Math.max(0, y);
         this.screenX = Math.min(x, MapData.WIDTH_IN_TILES - screenWidth);
         this.screenY = Math.min(y, MapData.HEIGHT_IN_TILES - screenHeight);
     }
 
+    public void centerScroll(int x, int y) {
+        setMapXYPixel(
+                x - MapData.TILE_WIDTH * screenWidth / 2,
+                y - MapData.TILE_HEIGHT * screenHeight / 2);
+    }
     public void setMapX(int x) {
         setMapXY(x, screenY);
     }
@@ -579,6 +624,13 @@ public class MapDisplay extends AbstractButton implements
         return screenY;
     }
 
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    public int getScrollY() {
+        return scrollY;
+    }
     public int getSectorX() {
         return sectorX;
     }
@@ -613,16 +665,27 @@ public class MapDisplay extends AbstractButton implements
         this.fireActionPerformed(sectorEvent);
     }
 
+    public int translateMouseX(MouseEvent e) {
+        return e.getX() + scrollX - MapData.TILE_WIDTH * screenX;
+    }
+
+    public int translateMouseY(MouseEvent e) {
+        return e.getY() + scrollY - MapData.TILE_HEIGHT * screenY;
+    }
+
     public void mouseClicked(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
+
         // Make sure they didn't click on the border
-        if ((e.getX() >= 1)
-                && (e.getX() <= screenWidth * MapData.TILE_WIDTH + 2)
-                && (e.getY() >= 1)
-                && (e.getY() <= screenHeight * MapData.TILE_HEIGHT + 2)) {
+        if ((mouseX >= 1)
+                && (mouseX <= screenWidth * MapData.TILE_WIDTH + 2)
+                && (mouseY >= 1)
+                && (mouseY <= screenHeight * MapData.TILE_HEIGHT + 2)) {
             if (currentMode == MapMode.MAP) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    int mX = (e.getX() - 1) / MapData.TILE_WIDTH + screenX;
-                    int mY = (e.getY() - 1) / MapData.TILE_HEIGHT + screenY;
+                    int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
+                    int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
                     if (e.isShiftDown()) {
                         tileSelector.selectTile(map.getMapTile(mX, mY));
                     } else if (!e.isControlDown()) {
@@ -639,17 +702,17 @@ public class MapDisplay extends AbstractButton implements
                     }
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     // Make sure they didn't click on the border
-                    int sX = (screenX + ((e.getX() - 1) / MapData.TILE_WIDTH))
+                    int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
                             / MapData.SECTOR_WIDTH;
-                    int sY = (screenY + ((e.getY() - 1) / MapData.TILE_HEIGHT))
+                    int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
                             / MapData.SECTOR_HEIGHT;
                     selectSector(sX, sY);
                 }
             } else if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX();
+                    popupX = e.getX(); // Don't use translated coords
                     popupY = e.getY();
-                    popupSE = getSpriteEntryFromMouseXY(e.getX(), e.getY());
+                    popupSE = getSpriteEntryFromMouseXY(mouseX, mouseY);
                     if (popupSE == null) {
                         detailsNPC.setText("No Sprite Selected");
                         delNPC.setEnabled(false);
@@ -675,13 +738,13 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(true);
                         moveNPC.setEnabled(true);
                     }
-                    spritePopupMenu.show(this, e.getX(), e.getY());
+                    spritePopupMenu.show(this, mouseX, mouseY);
                 }
             } else if (currentMode == MapMode.DOOR) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX();
+                    popupX = e.getX(); // Don't use translated coords
                     popupY = e.getY();
-                    popupDoor = getDoorFromMouseXY(e.getX(), e.getY());
+                    popupDoor = getDoorFromMouseXY(mouseX, mouseY);
                     if (popupDoor == null) {
                         detailsDoor.setText("No Door Selected");
                         delDoor.setEnabled(false);
@@ -707,7 +770,7 @@ public class MapDisplay extends AbstractButton implements
                         jumpDoor.setEnabled(popupDoor.type.equals("door"));
 
                     }
-                    doorPopupMenu.show(this, e.getX(), e.getY());
+                    doorPopupMenu.show(this, mouseX, mouseY);
                 }
             } else if (currentMode == MapMode.SEEK_DOOR) {
                 doorSeeker.seek(screenX * 4 + seekDrawX / 8, screenY * 4 + seekDrawY
@@ -716,8 +779,8 @@ public class MapDisplay extends AbstractButton implements
                 changeMode(currentMode);
                 repaint();
             } else if (currentMode == MapMode.ENEMY) {
-                int eX = ((e.getX() - 1) / MapData.TILE_WIDTH + screenX) / 2;
-                int eY = ((e.getY() - 1) / MapData.TILE_HEIGHT + screenY) / 2;
+                int eX = ((mouseX - 1) / MapData.TILE_WIDTH + screenX) / 2;
+                int eY = ((mouseY - 1) / MapData.TILE_HEIGHT + screenY) / 2;
                 if (e.isShiftDown()) {
                     tileSelector.selectTile(map.getMapEnemyGroup(eX, eY));
                 } else {
@@ -726,7 +789,7 @@ public class MapDisplay extends AbstractButton implements
                     repaint();
                 }
             } else if (currentMode == MapMode.HOTSPOT) {
-                int mx = ((e.getX() - 1) / 8) + (screenX * 4), my = ((e.getY() - 1) / 8)
+                int mx = ((mouseX - 1) / 8) + (screenX * 4), my = ((mouseY - 1) / 8)
                         + (screenY * 4);
                 if (editHS != null) {
                     if (editHSx1 == -1) {
@@ -748,8 +811,8 @@ public class MapDisplay extends AbstractButton implements
                                 && (my <= hs.y2)) {
                             editHS = hs;
                             editHSx1 = editHSy1 = -1;
-                            hsMouseX = e.getX() & (~7);
-                            hsMouseY = e.getY() & (~7);
+                            hsMouseX = mouseX & (~7);
+                            hsMouseY = mouseY & (~7);
                             repaint();
                             return;
                         }
@@ -905,15 +968,16 @@ public class MapDisplay extends AbstractButton implements
                     new Point(0, 0), "blank cursor");
 
     public void mousePressed(MouseEvent e) {
-        int mx = e.getX(), my = e.getY();
+        int mx = translateMouseX(e);
+        int my = translateMouseY(e);
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
             if (previousMode == null) {
                 previousMode = currentMode;
                 changeMode(MapMode.PREVIEW);
 
                 tvPreview = true;
-                tvPreviewX = e.getX();
-                tvPreviewY = e.getY();
+                tvPreviewX = mx;
+                tvPreviewY = my;
 
                 tvPreviewH = 224 / 2;
                 if (prefs.getValueAsBoolean("maskOverscan")) {
@@ -949,7 +1013,8 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseReleased(MouseEvent e) {
-        int mx = e.getX(), my = e.getY();
+        int mx = translateMouseX(e);
+        int my = translateMouseY(e);
         if (e.getButton() == 1) {
             if (previousMode != null) {
                 changeMode(previousMode);
@@ -983,35 +1048,39 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseDragged(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
         if (tvPreview) {
-            tvPreviewX = e.getX();
-            tvPreviewY = e.getY();
+            tvPreviewX = mouseX;
+            tvPreviewY = mouseY;
             repaint();
         } else if (movingNPC != -1) {
-            movingDrawX = e.getX() - movingNPCdim[0] / 2 + 1;
-            movingDrawY = e.getY() - movingNPCdim[1] + 9;
+            movingDrawX = mouseX - movingNPCdim[0] / 2 + 1;
+            movingDrawY = mouseY - movingNPCdim[1] + 9;
             repaint();
         } else if (movingDoor != null) {
-            movingDrawX = e.getX() & (~7);
-            movingDrawY = e.getY() & (~7);
+            movingDrawX = mouseX & (~7);
+            movingDrawY = mouseY & (~7);
             repaint();
         }
 
-        updateCoordLabels(e.getX(), e.getY());
+        updateCoordLabels(mouseX, mouseY);
     }
 
     public void mouseMoved(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
         if (currentMode == MapMode.SEEK_DOOR) {
-            seekDrawX = e.getX() & (~7);
-            seekDrawY = e.getY() & (~7);
+            seekDrawX = mouseX & (~7);
+            seekDrawY = mouseY & (~7);
             repaint();
         } else if (currentMode == MapMode.HOTSPOT && (editHS != null)) {
-            hsMouseX = e.getX() & (~7);
-            hsMouseY = e.getY() & (~7);
+            hsMouseX = mouseX & (~7);
+            hsMouseY = mouseY & (~7);
             repaint();
         }
 
-        updateCoordLabels(e.getX(), e.getY());
+        updateCoordLabels(mouseX, mouseY);
     }
 
     private void updateCoordLabels(final int mouseX, final int mouseY) {
