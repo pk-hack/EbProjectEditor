@@ -574,22 +574,26 @@ public class MapDisplay extends AbstractButton implements
 
     public int getMinScrollX() {
         // Half the screen to the left of the map
-        return -screenWidth * MapData.TILE_WIDTH / 2;
+        return (int) (-getSize().width / (2 * zoom));
     }
 
     public int getMaxScrollX() {
         // Half the screen to the right of the map
-        return (MapData.WIDTH_IN_TILES - screenWidth / 2) * MapData.TILE_WIDTH;
+        int mapSize = MapData.WIDTH_IN_TILES * MapData.TILE_WIDTH;
+        int screenSize = (int) (getSize().width / (2 * zoom));
+        return mapSize - screenSize;
     }
 
     public int getMinScrollY() {
         // Half the screen above the map
-        return -screenHeight * MapData.TILE_HEIGHT / 2;
+        return (int) (-getSize().height / (2 * zoom));
     }
 
     public int getMaxScrollY() {
         // Half the screen below the map
-        return (MapData.HEIGHT_IN_TILES - screenHeight / 2) * MapData.TILE_HEIGHT;
+        int mapSize = MapData.HEIGHT_IN_TILES * MapData.TILE_WIDTH;
+        int screenSize = (int) (getSize().height / (2 * zoom));
+        return mapSize - screenSize;
     }
 
     public void setMapXY(int x, int y) {
