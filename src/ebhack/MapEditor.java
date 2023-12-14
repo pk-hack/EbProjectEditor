@@ -201,6 +201,14 @@ public class MapEditor extends ToolModule implements ActionListener,
 		checkBox.setActionCommand("mapchanges");
 		checkBox.addActionListener(this);
 		// menu.add(checkBox);
+		checkBox = new JCheckBoxMenuItem("Display Enemies Using Battle Sprites");
+		checkBox.setMnemonic('e');
+		checkBox.setSelected(false);
+		checkBox.setActionCommand("enemysprites");
+		checkBox.setAccelerator(KeyStroke.getKeyStroke("control E"));
+		checkBox.addActionListener(this);
+		menu.add(checkBox);
+		menu.add(new JSeparator());
 		menu.add(new PrefsCheckBox("Mask Overscan in Preview", prefs,
 				"maskOverscan", false, 'o'));
 		menuBar.add(menu);
@@ -757,6 +765,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 			mapDisplay.repaint();
 		} else if (e.getActionCommand().equals("mapchanges")) {
 			mapDisplay.toggleMapChanges();
+		} else if (e.getActionCommand().equals("enemysprites")) {
+			mapDisplay.toggleEnemyBattleSprites();
+			mapDisplay.repaint();
 		} else if (e.getActionCommand().equals("showCoords")) {
 			coordsPanel.setVisible(prefs.getValueAsBoolean("showCoords"));
 			mainWindow.pack();

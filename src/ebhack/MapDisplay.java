@@ -1,14 +1,21 @@
 package ebhack;
 
+import ebhack.types.EnemyGroup;
+import ebhack.types.MapEnemyGroup;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Stack;
 
 public class MapDisplay extends AbstractButton implements
         ActionListener, MouseListener, MouseMotionListener {
+    private static final double MIN_ZOOM_TO_DISPLAY_ENEMIES = 0.5;
+    private static final int ENEMY_ROW_1_Y = 32;
+    private static final int ENEMY_ROW_2_Y = 48;
     private YMLPreferences prefs;
     private MapData map;
     private JMenuItem copySector, pasteSector, copySector2, pasteSector2,
@@ -100,6 +107,7 @@ public class MapDisplay extends AbstractButton implements
     private MapMode previousMode = null;
     private boolean drawTileNums = false;
     private boolean drawSpriteNums = true;
+    private boolean enemyBattleSprites = false;
     private boolean gamePreview = false;
     private boolean tvPreview = false;
     private int tvPreviewX, tvPreviewY, tvPreviewW, tvPreviewH;
@@ -124,7 +132,7 @@ public class MapDisplay extends AbstractButton implements
             enemyColors = new Color[203];
             for (int i = 0; i < 203; ++i)
                 enemyColors[i] = new Color(
-                        ((int) (Math.E * 0x100000 * i)) & 0xffffff);
+                        ((int) (Math.E * 0x100000 * i)) & 0x7f7f7f7f);
         }
 
         this.prefs = prefs;
@@ -395,15 +403,7 @@ public class MapDisplay extends AbstractButton implements
 
                     int enemyGroup = map.getMapEnemyGroup((screenX + ix) / 2, (screenY + iy) / 2);
                     if (enemyGroup != 0) {
-                        g.setComposite(AlphaComposite.getInstance(
-                                AlphaComposite.SRC_OVER, 0.5F));
-                        g.setPaint(enemyColors[enemyGroup]);
-                        g.fill(rect);
-
-                        g.setComposite(AlphaComposite.getInstance(
-                                AlphaComposite.SRC_OVER, 1.0F));
-                        drawNumber(g, enemyGroup, ix * MapData.TILE_WIDTH + 1, iy
-                                * MapData.TILE_HEIGHT + 1, false, false);
+                        drawEnemyPlate(g, rect, enemyGroup);
                     }
                 }
             }
@@ -475,7 +475,96 @@ public class MapDisplay extends AbstractButton implements
         }
     }
 
-    private Rectangle2D textBG;
+    public void drawEnemyPlate(Graphics2D g, Rectangle2D rect, int mapEnemyGroupId) {
+        MapEnemyGroup mapEnemyGroup = map.getMapEnemyGroup(mapEnemyGroupId);
+        // Draw background
+        g.setComposite(AlphaComposite.getInstance(
+                AlphaComposite.SRC_OVER, 0.75F));
+        g.setPaint(enemyColors[mapEnemyGroupId]);
+        g.fill(rect);
+        g.setComposite(AlphaComposite.getInstance(
+                AlphaComposite.SRC_OVER, 1.0F));
+
+        // Draw the enemies in a clip region so it's okay to overflow
+        if (zoom >= MIN_ZOOM_TO_DISPLAY_ENEMIES) {
+            g.setClip(rect);
+            // Start a group
+            if (!mapEnemyGroup.subGroup1.isEmpty() || mapEnemyGroup.subGroup1Rate > 0) {
+                int x = 0;
+                int y = (int) (ENEMY_ROW_1_Y * enemySpriteZoom());
+                for (MapEnemyGroup.SpawnGroup spawnGroup : mapEnemyGroup.subGroup1) {
+                    x = 4 + drawEnemyGroup(g, rect, new Point(x, y), spawnGroup.probability, spawnGroup.enemyGroup);
+                }
+                String spawnRate = mapEnemyGroup.subGroup1Rate + "%";
+                Rectangle2D textBG = g.getFontMetrics().getStringBounds(spawnRate, g);
+                g.setPaint(Color.white);
+                g.drawString(spawnRate, (int) (rect.getMaxX() - textBG.getWidth()), (int) rect.getY() + 32);
+            }
+            // Start a group
+            if (!mapEnemyGroup.subGroup2.isEmpty() || mapEnemyGroup.subGroup2Rate > 0) {
+                int x = 0;
+                int y = (int) (ENEMY_ROW_2_Y * enemySpriteZoom());
+                for (MapEnemyGroup.SpawnGroup spawnGroup : mapEnemyGroup.subGroup2) {
+                    x = 4 + drawEnemyGroup(g, rect, new Point(x, y), spawnGroup.probability, spawnGroup.enemyGroup);
+                }
+                String spawnRate = mapEnemyGroup.subGroup2Rate + "%";
+                Rectangle2D textBG = g.getFontMetrics().getStringBounds(spawnRate, g);
+                g.setPaint(Color.white);
+                g.drawString(spawnRate, (int) (rect.getMaxX() - textBG.getWidth()), (int) rect.getY() + 48);
+            }
+            g.setClip(null);
+        }
+
+        // Draw labels
+        drawNumber(g, mapEnemyGroupId, (int) rect.getX(), (int) rect.getY(), false, false);
+    }
+
+    /**
+     * Draws one enemy group. Bounds is the plate, origin is their coordinates (zoomed) within the plate.
+     * Returns the x coordinate of the furthest right thing it drew (to space the next thing)
+     */
+    public int drawEnemyGroup(Graphics2D g, Rectangle2D bounds, Point origin, int probability, int enemyGroupId) {
+        EnemyGroup enemyGroup = map.getEnemyGroup(enemyGroupId);
+        int maxX = origin.x;
+        AffineTransform stashed = g.getTransform();
+        g.translate(bounds.getX(), bounds.getY());
+        g.scale(1 / enemySpriteZoom(), 1 / enemySpriteZoom());
+        int spacingRight = enemyBattleSprites ? 8 : 4;
+        int spacingDown = enemyBattleSprites ? 16 : 8;
+        int count = 0;
+        for (EnemyGroup.EnemyCount enemy : enemyGroup.enemies) {
+            Image image = map.getEnemySprite(enemy.enemy, enemyBattleSprites);
+            if (image == null) {
+                continue;
+            }
+            for (int i = 0; i < enemy.amount; i++) {
+                int ex = origin.x + count * spacingRight;
+                int ey = origin.y + count * spacingDown;
+                g.drawImage(image,
+                        ex, ey - image.getHeight(null),
+                        null);
+                maxX = Math.max(ex + image.getWidth(null), maxX);
+                count++;
+            }
+        }
+        if (zoom > 1) {
+            String groupPercent = probability + "/8";
+            int stringWidth = (int) g.getFontMetrics()
+                    .getStringBounds(groupPercent, g).getWidth();
+            int stringX = origin.x + Math.max(0, (maxX - stringWidth - origin.x) / 2);
+            g.setPaint(Color.white);
+            g.drawString(groupPercent, stringX, origin.y + count * spacingDown);
+            maxX = Math.max(maxX, origin.x + stringWidth);
+        }
+
+        g.setTransform(stashed);
+        return maxX;
+    }
+
+    private double enemySpriteZoom() {
+        double maxZoom = enemyBattleSprites ? 7 : 4;;
+        return Math.min(zoom, maxZoom);
+    }
 
     private void drawNumber(Graphics2D g, int n, int x, int y, boolean hex,
                             boolean above) {
@@ -485,8 +574,7 @@ public class MapDisplay extends AbstractButton implements
         else
             s = ToolModule.addZeros(Integer.toString(n), 4);
 
-        if (textBG == null)
-            textBG = g.getFontMetrics().getStringBounds(s, g);
+        Rectangle2D textBG = g.getFontMetrics().getStringBounds(s, g);
 
         g.setPaint(Color.black);
         if (above) {
@@ -1199,6 +1287,10 @@ public class MapDisplay extends AbstractButton implements
     public void toggleMapChanges() {
         // TODO Auto-generated method stub
 
+    }
+
+    public void toggleEnemyBattleSprites() {
+        enemyBattleSprites = !enemyBattleSprites;
     }
 
     public boolean undoMapAction() {
