@@ -774,24 +774,15 @@ public class MapDisplay extends AbstractButton implements
         sectorX = sX;
         sectorY = sY;
         MapData.Sector newS = map.getSector(sectorX, sectorY);
-        if (selectedSector != newS) {
-            selectedSector = newS;
-            sectorPal = TileEditor.tilesets[TileEditor
-                    .getDrawTilesetNumber(selectedSector.tileset)]
-                    .getPaletteNum(selectedSector.tileset,
-                            selectedSector.palette);
-            copySector.setEnabled(true);
-            pasteSector.setEnabled(true);
-            copySector2.setEnabled(true);
-            pasteSector2.setEnabled(true);
-        } else {
-            // Un-select sector
-            selectedSector = null;
-            copySector.setEnabled(false);
-            pasteSector.setEnabled(false);
-            copySector2.setEnabled(false);
-            pasteSector2.setEnabled(false);
-        }
+        selectedSector = newS;
+        sectorPal = TileEditor.tilesets[TileEditor
+                .getDrawTilesetNumber(selectedSector.tileset)]
+                .getPaletteNum(selectedSector.tileset,
+                        selectedSector.palette);
+        copySector.setEnabled(true);
+        pasteSector.setEnabled(true);
+        copySector2.setEnabled(true);
+        pasteSector2.setEnabled(true);
         repaint();
         this.fireActionPerformed(sectorEvent);
     }
@@ -813,33 +804,7 @@ public class MapDisplay extends AbstractButton implements
                 && (mouseX <= screenWidth * MapData.TILE_WIDTH + 2)
                 && (mouseY >= 1)
                 && (mouseY <= screenHeight * MapData.TILE_HEIGHT + 2)) {
-            if (currentMode == MapMode.MAP) {
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
-                    int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
-                    if (e.isShiftDown()) {
-                        tileSelector.selectTile(map.getMapTile(mX, mY));
-                    } else if (!e.isControlDown()) {
-                        // Keep track of the undo stuff
-                        undoStack.push(new UndoableTileChange(mX, mY, map
-                                .getMapTile(mX, mY), tileSelector
-                                .getSelectedTile()));
-                        undoButton.setEnabled(true);
-                        redoStack.clear();
-
-                        map.setMapTile(mX, mY,
-                                tileSelector.getSelectedTile());
-                        repaint();
-                    }
-                } else if (e.getButton() == MouseEvent.BUTTON3) {
-                    // Make sure they didn't click on the border
-                    int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
-                            / MapData.SECTOR_WIDTH;
-                    int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
-                            / MapData.SECTOR_HEIGHT;
-                    selectSector(sX, sY);
-                }
-            } else if (currentMode == MapMode.SPRITE) {
+            if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     popupX = mouseX;
                     popupY = mouseY;
@@ -952,6 +917,34 @@ public class MapDisplay extends AbstractButton implements
                     }
                 }
             }
+        }
+    }
+
+    private void mapModeClick(int mouseX, int mouseY, int button, boolean shift) {
+        if (button == MouseEvent.BUTTON1) {
+            int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
+            int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
+            if (shift) {
+                tileSelector.selectTile(map.getMapTile(mX, mY));
+            } else {
+                // Keep track of the undo stuff
+                undoStack.push(new UndoableTileChange(mX, mY, map
+                        .getMapTile(mX, mY), tileSelector
+                        .getSelectedTile()));
+                undoButton.setEnabled(true);
+                redoStack.clear();
+
+                map.setMapTile(mX, mY,
+                        tileSelector.getSelectedTile());
+                repaint();
+            }
+        } else if (button == MouseEvent.BUTTON3) {
+            // Make sure they didn't click on the border
+            int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
+                    / MapData.SECTOR_WIDTH;
+            int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
+                    / MapData.SECTOR_HEIGHT;
+            selectSector(sX, sY);
         }
     }
 
@@ -1123,6 +1116,8 @@ public class MapDisplay extends AbstractButton implements
                 this.setCursor(blankCursor);
                 repaint();
             }
+        } else if (currentMode == MapMode.MAP) {
+            mapModeClick(mx, my, e.getButton(), e.isShiftDown());
         } else if (e.getButton() == MouseEvent.BUTTON1) {
             if (currentMode == MapMode.SPRITE && (movingNPC == -1)) {
                 movingNPC = popNpcIdFromMouseXY(mx, my);
@@ -1204,6 +1199,8 @@ public class MapDisplay extends AbstractButton implements
         } else if (mouseDragButton == 2) {
             setMapXYPixel(scrollX - deltaX / zoom, scrollY - deltaY / zoom);
             this.repaint();
+        } else if (currentMode == MapMode.MAP) {
+            mapModeClick(mouseX, mouseY, mouseDragButton, e.isShiftDown());
         }
 
         updateCoordLabels(mouseX, mouseY);
