@@ -54,7 +54,13 @@ public class MapDisplay extends AbstractButton implements
     // Map X and Y coordinates of the tile displayed in the top left corner
     private int screenX = 0, screenY = 0;
     // Pixel coordinates of top map X and Y
-    private int scrollX = 0, scrollY = 0;
+    private double scrollX = 0, scrollY = 0;
+    // Zoom!
+    private double zoom = 1.0;
+
+    // Recent mouse coords for dragging
+    private int mouseDragButton = -1;
+    private int lastMouseX = 0, lastMouseY = 0;
 
     // Data for the selected sector
     private MapData.Sector selectedSector = null;
@@ -222,8 +228,10 @@ public class MapDisplay extends AbstractButton implements
 
         // Translate the screen for smooth scrolling. This entire codebase is built on tile coordinates, so rather than
         // trying to swap it over, just compare the results and translate that much.
-        g.translate(-(scrollX - MapData.TILE_WIDTH * screenX),
-                -(scrollY - MapData.TILE_HEIGHT * screenY));
+        g.translate(-(scrollX - MapData.TILE_WIDTH * screenX) * zoom,
+                -(scrollY - MapData.TILE_HEIGHT * screenY) * zoom);
+        // Zoom zoom
+        g.scale(zoom, zoom);
 
         MapData.Sector sector;
         int pal;
@@ -566,41 +574,49 @@ public class MapDisplay extends AbstractButton implements
 
     public int getMinScrollX() {
         // Half the screen to the left of the map
-        return -screenWidth * MapData.TILE_WIDTH / 2;
+        return (int) (-getSize().width / (2 * zoom));
     }
 
     public int getMaxScrollX() {
         // Half the screen to the right of the map
-        return (MapData.WIDTH_IN_TILES - screenWidth / 2) * MapData.TILE_WIDTH;
+        int mapSize = MapData.WIDTH_IN_TILES * MapData.TILE_WIDTH;
+        int screenSize = (int) (getSize().width / (2 * zoom));
+        return mapSize - screenSize;
     }
 
     public int getMinScrollY() {
         // Half the screen above the map
-        return -screenHeight * MapData.TILE_HEIGHT / 2;
+        return (int) (-getSize().height / (2 * zoom));
     }
 
     public int getMaxScrollY() {
         // Half the screen below the map
-        return (MapData.HEIGHT_IN_TILES - screenHeight / 2) * MapData.TILE_HEIGHT;
+        int mapSize = MapData.HEIGHT_IN_TILES * MapData.TILE_WIDTH;
+        int screenSize = (int) (getSize().height / (2 * zoom));
+        return mapSize - screenSize;
     }
 
     public void setMapXY(int x, int y) {
         setMapXYPixel(x * MapData.TILE_WIDTH, y * MapData.TILE_HEIGHT);
     }
 
-    public void setMapXYPixel(int x, int y) {
-        x = Math.min(x, getMaxScrollX());
-        x = Math.max(x, getMinScrollX());
-        y = Math.min(y, getMaxScrollY());
-        y = Math.max(y, getMinScrollY());
+    public void clampMapScroll() {
+        scrollX = Math.min(scrollX, getMaxScrollX());
+        scrollX = Math.max(scrollX, getMinScrollX());
+        scrollY = Math.min(scrollY, getMaxScrollY());
+        scrollY = Math.max(scrollY, getMinScrollY());
+    }
+
+    public void setMapXYPixel(double x, double y) {
         scrollX = x;
         scrollY = y;
-        x /= MapData.TILE_WIDTH;
-        y /= MapData.TILE_HEIGHT;
-        x = Math.max(0, x);
-        y = Math.max(0, y);
-        this.screenX = Math.min(x, MapData.WIDTH_IN_TILES - screenWidth);
-        this.screenY = Math.min(y, MapData.HEIGHT_IN_TILES - screenHeight);
+        clampMapScroll();
+        int tileX = (int) (scrollX / MapData.TILE_WIDTH);
+        int tileY = (int) (scrollY / MapData.TILE_HEIGHT);
+        tileX = Math.max(0, tileX);
+        tileY = Math.max(0, tileY);
+        this.screenX = Math.min(tileX, MapData.WIDTH_IN_TILES - screenWidth);
+        this.screenY = Math.min(tileY, MapData.HEIGHT_IN_TILES - screenHeight);
     }
 
     public void centerScroll(int x, int y) {
@@ -625,11 +641,11 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public int getScrollX() {
-        return scrollX;
+        return (int) scrollX;
     }
 
     public int getScrollY() {
-        return scrollY;
+        return (int) scrollY;
     }
     public int getSectorX() {
         return sectorX;
@@ -637,6 +653,33 @@ public class MapDisplay extends AbstractButton implements
 
     public int getSectorY() {
         return sectorY;
+    }
+
+    public void adjustZoom(int delta) {
+        // Convert last known mouse coordinates to world coordinates
+        // (we'll be restoring these after the zoom)
+        double worldX = lastMouseX / zoom + scrollX;
+        double worldY = lastMouseY / zoom + scrollY;
+        // For high zooms, use integer coords
+        if (zoom > 1 || zoom == 1 && delta > 0) {
+            zoom += delta;
+            zoom = Math.min(zoom, 8);
+            zoom = Math.max(zoom, 1);
+        } else {
+            // For zooming out, go inverted
+            int invZoom = (int) (1.0 / zoom);
+            invZoom -= delta;
+            invZoom = Math.max(1, invZoom);
+            invZoom = Math.min(8, invZoom);
+            zoom = 1.0 / invZoom;
+        }
+        // Adjust scroll so worldX/worldY stay the same
+        scrollX = worldX - lastMouseX / zoom;
+        scrollY = worldY - lastMouseY / zoom;
+        clampMapScroll();
+
+        resetScreenSize();
+        repaint();
     }
 
     private void selectSector(int sX, int sY) {
@@ -666,11 +709,11 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public int translateMouseX(MouseEvent e) {
-        return e.getX() + scrollX - MapData.TILE_WIDTH * screenX;
+        return (int) (e.getX() / zoom + scrollX - MapData.TILE_WIDTH * screenX);
     }
 
     public int translateMouseY(MouseEvent e) {
-        return e.getY() + scrollY - MapData.TILE_HEIGHT * screenY;
+        return (int) (e.getY() / zoom + scrollY - MapData.TILE_HEIGHT * screenY);
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -710,8 +753,8 @@ public class MapDisplay extends AbstractButton implements
                 }
             } else if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX(); // Don't use translated coords
-                    popupY = e.getY();
+                    popupX = mouseX;
+                    popupY = mouseY;
                     popupSE = getSpriteEntryFromMouseXY(mouseX, mouseY);
                     if (popupSE == null) {
                         detailsNPC.setText("No Sprite Selected");
@@ -722,9 +765,9 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(false);
                         moveNPC.setEnabled(false);
                     } else {
-                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / 8)
+                        final int areaX = ((screenX + mouseX / MapData.TILE_WIDTH) / 8)
                                 * MapData.TILE_WIDTH * 8;
-                        final int areaY = ((screenY + popupY
+                        final int areaY = ((screenY + mouseY
                                 / MapData.TILE_HEIGHT) / 8)
                                 * MapData.TILE_HEIGHT * 8;
                         detailsNPC.setText("Sprite @ ("
@@ -738,12 +781,13 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(true);
                         moveNPC.setEnabled(true);
                     }
-                    spritePopupMenu.show(this, mouseX, mouseY);
+                    // Don't use translated coords
+                    spritePopupMenu.show(this, e.getX(), e.getY());
                 }
             } else if (currentMode == MapMode.DOOR) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX(); // Don't use translated coords
-                    popupY = e.getY();
+                    popupX = mouseX;
+                    popupY = mouseY;
                     popupDoor = getDoorFromMouseXY(mouseX, mouseY);
                     if (popupDoor == null) {
                         detailsDoor.setText("No Door Selected");
@@ -753,9 +797,9 @@ public class MapDisplay extends AbstractButton implements
                         editDoor.setEnabled(false);
                         jumpDoor.setEnabled(false);
                     } else {
-                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
+                        final int areaX = ((screenX + mouseX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
                                 * MapData.SECTOR_WIDTH * (MapData.TILE_WIDTH / 8);
-                        final int areaY = ((screenY + popupY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
+                        final int areaY = ((screenY + mouseY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
                                 * MapData.SECTOR_HEIGHT * (MapData.TILE_HEIGHT / 8);
                         detailsDoor.setText(ToolModule
                                 .capitalize(popupDoor.type)
@@ -770,7 +814,8 @@ public class MapDisplay extends AbstractButton implements
                         jumpDoor.setEnabled(popupDoor.type.equals("door"));
 
                     }
-                    doorPopupMenu.show(this, mouseX, mouseY);
+                    // Don't use translated coords
+                    doorPopupMenu.show(this, e.getX(), e.getY());
                 }
             } else if (currentMode == MapMode.SEEK_DOOR) {
                 doorSeeker.seek(screenX * 4 + seekDrawX / 8, screenY * 4 + seekDrawY
@@ -968,6 +1013,7 @@ public class MapDisplay extends AbstractButton implements
                     new Point(0, 0), "blank cursor");
 
     public void mousePressed(MouseEvent e) {
+        mouseDragButton = e.getButton();
         int mx = translateMouseX(e);
         int my = translateMouseY(e);
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
@@ -1013,6 +1059,7 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseReleased(MouseEvent e) {
+        mouseDragButton = -1;
         int mx = translateMouseX(e);
         int my = translateMouseY(e);
         if (e.getButton() == 1) {
@@ -1048,6 +1095,10 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseDragged(MouseEvent e) {
+        int deltaX = e.getX() - lastMouseX;
+        int deltaY = e.getY() - lastMouseY;
+        lastMouseX = e.getX();
+        lastMouseY = e.getY();
         int mouseX = translateMouseX(e);
         int mouseY = translateMouseY(e);
         if (tvPreview) {
@@ -1062,12 +1113,17 @@ public class MapDisplay extends AbstractButton implements
             movingDrawX = mouseX & (~7);
             movingDrawY = mouseY & (~7);
             repaint();
+        } else if (mouseDragButton == 2) {
+            setMapXYPixel(scrollX - deltaX / zoom, scrollY - deltaY / zoom);
+            this.repaint();
         }
 
         updateCoordLabels(mouseX, mouseY);
     }
 
     public void mouseMoved(MouseEvent e) {
+        lastMouseX = e.getX();
+        lastMouseY = e.getY();
         int mouseX = translateMouseX(e);
         int mouseY = translateMouseY(e);
         if (currentMode == MapMode.SEEK_DOOR) {
@@ -1184,12 +1240,23 @@ public class MapDisplay extends AbstractButton implements
             return false;
     }
 
+    public void resetScreenSize() {
+        Dimension newD = getSize();
+        int newSW = (int) Math.ceil(newD.width / 32.0);
+        int newSH = 1 + (int) Math.ceil(newD.height / 32.0);
+        setScreenSize(newSW, newSH);
+    }
+
     public void setScreenSize(int newSW, int newSH) {
+        newSW = (int) Math.ceil(newSW / zoom);
+        newSH = (int) Math.ceil(newSH / zoom);
+        newSW = Math.min(newSW, MapData.WIDTH_IN_TILES);
+        newSH = Math.min(newSH, MapData.HEIGHT_IN_TILES);
         if ((newSW != screenWidth) || (newSH != screenHeight)) {
             screenWidth = newSW;
             screenHeight = newSH;
 
-            setMapXY(screenX, screenY);
+            setMapXYPixel(scrollX, scrollY);
 
             setPreferredSize(new Dimension(screenWidth * MapData.TILE_WIDTH
                     + 2, screenHeight * MapData.TILE_HEIGHT + 2));

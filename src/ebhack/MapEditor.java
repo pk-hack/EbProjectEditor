@@ -1028,13 +1028,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 	}
 
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		if (e.isControlDown()) { // Horizontal scrolling
-			setMapXYPixel(mapDisplay.getScrollX() + (e.getWheelRotation() * 4 * MapData.TILE_WIDTH),
-					mapDisplay.getScrollY());
-		} else { // Vertical scrolling
-			setMapXYPixel(mapDisplay.getScrollX(),
-					mapDisplay.getScrollY() + (e.getWheelRotation() * 4 * MapData.TILE_HEIGHT));
-		}
+		// Force going one tick at a time
+		int delta = (int) Math.signum(e.getWheelRotation());
+		mapDisplay.adjustZoom(-delta);
 	}
 
 	@Override
@@ -1051,14 +1047,14 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 	@Override
 	public void componentResized(ComponentEvent arg0) {
-		Dimension newD = mapDisplay.getSize();
-		int newSW = (int) Math.ceil(newD.width / 32.0);
-		int newSH = 1 + (int) Math.ceil(newD.height / 32.0);
-		mapDisplay.setScreenSize(newSW, newSH);
+		mapDisplay.resetScreenSize();
 		// Reset this in case they lowered the window size and are now off the side
 		mapDisplay.setMapXYPixel(xScroll.getValue(), yScroll.getValue());
 		updateXYScrollBars();
 		updateXYFields();
+
+		Dimension newD = mapDisplay.getSize();
+		int newSW = (int) Math.ceil(newD.width / 32.0);
 		tileSelector.setScreenSize(newSW);
 	}
 
