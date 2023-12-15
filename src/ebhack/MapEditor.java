@@ -233,7 +233,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		panel.add(xField);
 		panel.add(new JLabel("Y: "));
 		yField = ToolModule.createSizedJTextField(
-				Integer.toString(MapData.HEIGHT_IN_TILES).length(), true);
+				Integer.toString(160).length(), true);
 		panel.add(yField);
 		panel.add(new JLabel("Tileset: "));
 		tilesetChooser = new JComboBox();
@@ -341,7 +341,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		xScroll.addAdjustmentListener(this);
 		contentPanel.add(xScroll, BorderLayout.SOUTH);
 		yScroll = new JScrollBar(JScrollBar.VERTICAL, 0,
-				mapDisplay.getScreenHeight(), 0, MapData.HEIGHT_IN_TILES);
+				mapDisplay.getScreenHeight(), 0, 80);
 		yScroll.addAdjustmentListener(this);
 		contentPanel.add(yScroll, BorderLayout.EAST);
 
@@ -887,9 +887,9 @@ public class MapEditor extends ToolModule implements ActionListener,
             final JTextField inputX2 = ToolModule.createSizedJTextField(
                     Integer.toString(MapData.WIDTH_IN_TILES).length(), true);
             final JTextField inputY = ToolModule.createSizedJTextField(
-                    Integer.toString(MapData.HEIGHT_IN_TILES).length(), true);
+                    Integer.toString(999).length(), true);
             final JTextField inputY2 = ToolModule.createSizedJTextField(
-                    Integer.toString(MapData.HEIGHT_IN_TILES).length(), true);
+                    Integer.toString(999).length(), true);
             final Object[] message = {
                     "X1:", inputX,
                     "Y1:", inputY,
@@ -982,8 +982,8 @@ public class MapEditor extends ToolModule implements ActionListener,
 			} else if (newX < 0) {
 				newX = 0;
 			}
-			if (newY > MapData.HEIGHT_IN_TILES - mapDisplay.getScreenHeight()) {
-				newY = MapData.HEIGHT_IN_TILES - mapDisplay.getScreenHeight();
+			if (newY > map.getHeightInTiles() - mapDisplay.getScreenHeight()) {
+				newY = map.getHeightInTiles() - mapDisplay.getScreenHeight();
 			} else if (newY < 0) {
 				newY = 0;
 			}

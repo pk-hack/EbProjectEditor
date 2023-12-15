@@ -9,19 +9,16 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.sql.Array;
 import java.util.*;
 import java.util.List;
 
 public class MapData {
     public static final int WIDTH_IN_TILES = 32 * 8;
-    public static final int HEIGHT_IN_TILES = 80 * 4;
     public static final int SECTOR_WIDTH = 8;
     public static final int SECTOR_HEIGHT = 4;
     public static final int WIDTH_IN_SECTORS = WIDTH_IN_TILES
             / SECTOR_WIDTH;
-    public static final int HEIGHT_IN_SECTORS = HEIGHT_IN_TILES
-            / SECTOR_HEIGHT;
-    public static final int HEIGHT_IN_DOUBLE_SECTORS = HEIGHT_IN_TILES / (SECTOR_HEIGHT * 2);
     public static final int TILE_WIDTH = 32;
     public static final int TILE_HEIGHT = 32;
 
@@ -29,14 +26,14 @@ public class MapData {
     public static final int NUM_DRAW_TSETS = 20;
 
     // Stores the map tiles
-    private int[][] mapTiles;
-    private Sector[][] sectors;
-    private ArrayList<SpriteEntry>[][] spriteAreas;
-    private ArrayList<Door>[][] doorAreas;
+    private ArrayList<Integer[]> mapTiles = new ArrayList<>();
+    private ArrayList<Sector[]> sectors = new ArrayList<>();
+    private ArrayList<ArrayList<SpriteEntry>[]> spriteAreas = new ArrayList<>();
+    private ArrayList<ArrayList<Door>[]> doorAreas = new ArrayList<>();
     private ArrayList<NPC> npcs;
     private static ArrayList<Image[]> spriteGroups;
     private static ArrayList<Integer[]> spriteGroupDims;
-    private int[][] enemyPlacement;
+    private ArrayList<Integer[]> enemyPlacement = new ArrayList<>();
     private Hotspot[] hotspots;
     private final ArrayList<MapEnemyGroup> mapEnemyGroups = new ArrayList<>();
     private final ArrayList<EnemyGroup> enemyGroups = new ArrayList<>();
@@ -48,23 +45,36 @@ public class MapData {
     }
 
     public void reset() {
-        mapTiles = new int[HEIGHT_IN_TILES][WIDTH_IN_TILES];
-        sectors = new Sector[HEIGHT_IN_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < sectors.length; ++i)
-            for (int j = 0; j < sectors[i].length; ++j)
-                sectors[i][j] = new Sector();
-        spriteAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < spriteAreas.length; ++i)
-            for (int j = 0; j < spriteAreas[i].length; ++j)
-                spriteAreas[i][j] = new ArrayList<SpriteEntry>();
-        doorAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < doorAreas.length; ++i)
-            for (int j = 0; j < doorAreas[i].length; ++j)
-                doorAreas[i][j] = new ArrayList<Door>();
+        // TODO - delete all of this once you have non-hard-coded sizes
+        int HEIGHT_IN_TILES = 80 * 4;
+        int HEIGHT_IN_SECTORS = HEIGHT_IN_TILES / SECTOR_HEIGHT;
+        int HEIGHT_IN_DOUBLE_SECTORS = HEIGHT_IN_TILES / (SECTOR_HEIGHT * 2);
+        for (int i = 0; i < HEIGHT_IN_TILES; i++) {
+            mapTiles.add(new Integer[WIDTH_IN_TILES]);
+        }
+        for (int i = 0; i < HEIGHT_IN_SECTORS; i++) {
+            sectors.add(new Sector[WIDTH_IN_SECTORS]);
+        }
+        for (int i = 0; i < sectors.size(); ++i)
+            for (int j = 0; j < sectors.get(i).length; ++j)
+                sectors.get(i)[j] = new Sector();
+        for (int i = 0; i < HEIGHT_IN_DOUBLE_SECTORS; i++) {
+            spriteAreas.add(new ArrayList[WIDTH_IN_SECTORS]);
+            doorAreas.add(new ArrayList[WIDTH_IN_SECTORS]);
+        }
+        for (int i = 0; i < spriteAreas.size(); ++i)
+            for (int j = 0; j < spriteAreas.get(i).length; ++j)
+                spriteAreas.get(i)[j] = new ArrayList<SpriteEntry>();
+        for (int i = 0; i < doorAreas.size(); ++i)
+            for (int j = 0; j < doorAreas.get(i).length; ++j)
+                doorAreas.get(i)[j] = new ArrayList<Door>();
+        for (int i = 0; i < HEIGHT_IN_TILES / 2; i++) {
+            enemyPlacement.add(new Integer[WIDTH_IN_TILES / 2]);
+        }
+         // TODO - end todo
         npcs = new ArrayList<NPC>();
         spriteGroups = new ArrayList<Image[]>();
         spriteGroupDims = new ArrayList<Integer[]>();
-        enemyPlacement = new int[HEIGHT_IN_TILES / 2][WIDTH_IN_TILES / 2];
         hotspots = new Hotspot[56];
         for (int i = 0; i < hotspots.length; ++i)
             hotspots[i] = new Hotspot();
@@ -141,7 +151,7 @@ public class MapData {
                                                 int x, int y) {
         Integer[] wh;
         NPC npc;
-        for (SpriteEntry e : spriteAreas[areaY][areaX]) {
+        for (SpriteEntry e : spriteAreas.get(areaY)[areaX]) {
             npc = npcs.get(e.npcID);
             wh = spriteGroupDims.get(npc.sprite);
             if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
@@ -155,12 +165,12 @@ public class MapData {
     public int popNPCFromCoords(int areaX, int areaY, int x, int y) {
         Integer[] wh;
         NPC npc;
-        for (SpriteEntry e : spriteAreas[areaY][areaX]) {
+        for (SpriteEntry e : spriteAreas.get(areaY)[areaX]) {
             npc = npcs.get(e.npcID);
             wh = spriteGroupDims.get(npc.sprite);
             if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
                     && (e.y >= y - wh[1] / 2) && (e.y <= y + wh[1] / 2)) {
-                spriteAreas[areaY][areaX].remove(e);
+                spriteAreas.get(areaY)[areaX].remove(e);
                 return e.npcID;
             }
         }
@@ -170,29 +180,29 @@ public class MapData {
     public void pushNPCFromCoords(int npcid, int areaX, int areaY, int x,
                                   int y) {
         if ((areaX >= 0) && (areaY >= 0))
-            spriteAreas[areaY][areaX].add(new SpriteEntry(x, y, npcid));
+            spriteAreas.get(areaY)[areaX].add(new SpriteEntry(x, y, npcid));
     }
 
     public List<SpriteEntry> getSpriteArea(int areaX, int areaY) {
         if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
-                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+                || areaY < 0 || areaY >= spriteAreas.size()) {
             return Collections.emptyList();
         }
-        return spriteAreas[areaY][areaX];
+        return spriteAreas.get(areaY)[areaX];
     }
 
     // Door Editing
 
     public java.util.List<Door> getDoorArea(int areaX, int areaY) {
         if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
-                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+                || areaY < 0 || areaY >= doorAreas.size()) {
             return Collections.emptyList();
         }
-        return doorAreas[areaY][areaX];
+        return doorAreas.get(areaY)[areaX];
     }
 
     public Door getDoorFromCoords(int areaX, int areaY, int x, int y) {
-        for (Door e : doorAreas[areaY][areaX]) {
+        for (Door e : doorAreas.get(areaY)[areaX]) {
             if ((x <= e.x + 1) && (x >= e.x) && (y <= e.y + 1)
                     && (y >= e.y)) {
                 return e;
@@ -202,10 +212,10 @@ public class MapData {
     }
 
     public Door popDoorFromCoords(int areaX, int areaY, int x, int y) {
-        for (Door e : doorAreas[areaY][areaX]) {
+        for (Door e : doorAreas.get(areaY)[areaX]) {
             if ((x <= e.x + 1) && (x >= e.x) && (y <= e.y + 1)
                     && (y >= e.y)) {
-                doorAreas[areaY][areaX].remove(e);
+                doorAreas.get(areaY)[areaX].remove(e);
                 return e;
             }
         }
@@ -214,17 +224,17 @@ public class MapData {
 
     public void pushDoorFromCoords(Door door, int areaX, int areaY) {
         if ((areaX >= 0) && (areaY >= 0))
-            doorAreas[areaY][areaX].add(door);
+            doorAreas.get(areaY)[areaX].add(door);
     }
 
     // Enemy Editing
 
     public int getMapEnemyGroup(int x, int y) {
-        return enemyPlacement[y][x];
+        return enemyPlacement.get(y)[x];
     }
 
     public void setMapEnemyGroup(int x, int y, int val) {
-        enemyPlacement[y][x] = val;
+        enemyPlacement.get(y)[x] = val;
     }
 
     // Hotspot
@@ -240,7 +250,7 @@ public class MapData {
     // Other
 
     public Sector getSector(int sectorX, int sectorY) {
-        return sectors[sectorY][sectorX];
+        return sectors.get(sectorY)[sectorX];
     }
 
     public Image getSpriteImage(int sprite, int direction) {
@@ -384,6 +394,14 @@ public class MapData {
         }
     }
 
+    public int getHeightInPixels() {
+        return mapTiles.size() * TILE_HEIGHT;
+    }
+
+    public int getHeightInTiles() {
+        return mapTiles.size();
+    }
+
     public static class Door {
         public int x, y, eventFlag;
         public String type, pointer;
@@ -477,7 +495,7 @@ public class MapData {
                 for (Map.Entry<Integer, java.util.List<Map<String, Object>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
-                    area = this.doorAreas[y][x];
+                    area = this.doorAreas.get(y)[x];
                     area.clear();
                     if (entry.getValue() == null)
                         continue;
@@ -586,7 +604,7 @@ public class MapData {
                 for (Map.Entry<Integer, java.util.List<Map<String, Integer>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
-                    area = this.spriteAreas[y][x];
+                    area = this.spriteAreas.get(y)[x];
                     area.clear();
                     if (entry.getValue() == null)
                         continue;
@@ -706,7 +724,7 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / (WIDTH_IN_TILES / 2);
                 x = entry.getKey() % (WIDTH_IN_TILES / 2);
-                enemyPlacement[y][x] = entry.getValue().get(
+                enemyPlacement.get(y)[x] = entry.getValue().get(
                         "Enemy Map Group");
             }
         } catch (FileNotFoundException e) {
@@ -718,7 +736,7 @@ public class MapData {
     private void exportEnemyPlacement(File f) {
         Map<Integer, Map<String, Integer>> enemiesMap = new HashMap<Integer, Map<String, Integer>>();
         int i = 0;
-        for (int[] row : enemyPlacement) {
+        for (Integer[] row : enemyPlacement) {
             for (int ep : row) {
                 Map<String, Integer> entry = new HashMap<String, Integer>();
                 entry.put("Enemy Map Group", ep);
@@ -753,7 +771,7 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / WIDTH_IN_SECTORS;
                 x = entry.getKey() % WIDTH_IN_SECTORS;
-                sec = sectors[y][x];
+                sec = sectors.get(y)[x];
                 sec.tileset = (Integer) (entry.getValue().get("Tileset"));
                 sec.palette = (Integer) (entry.getValue().get("Palette"));
                 sec.music = (Integer) (entry.getValue().get("Music"));
@@ -813,12 +831,12 @@ public class MapData {
     private void setMapTilesFromStream(InputStream in) {
         String tmp;
         try {
-            for (int i = 0; i < mapTiles.length; i++) {
-                for (int j = 0; j < mapTiles[i].length; j++) {
+            for (int i = 0; i < mapTiles.size(); i++) {
+                for (int j = 0; j < mapTiles.get(i).length; j++) {
                     tmp = "" + ((char) in.read());
                     tmp += (char) in.read();
                     tmp += (char) in.read();
-                    mapTiles[i][j] = Integer.parseInt(tmp, 16);
+                    mapTiles.get(i)[j] = Integer.parseInt(tmp, 16);
                     in.read(); // " " or "\n"
                 }
             }
@@ -830,14 +848,14 @@ public class MapData {
     private void writeMapTilesToStream(FileOutputStream out) {
         try {
             String tmp;
-            for (int i = 0; i < mapTiles.length; i++) {
-                for (int j = 0; j < mapTiles[i].length; j++) {
+            for (int i = 0; i < mapTiles.size(); i++) {
+                for (int j = 0; j < mapTiles.get(i).length; j++) {
                     tmp = ToolModule.addZeros(
-                            Integer.toHexString(mapTiles[i][j]), 3);
+                            Integer.toHexString(mapTiles.get(i)[j]), 3);
                     out.write(tmp.charAt(0));
                     out.write(tmp.charAt(1));
                     out.write(tmp.charAt(2));
-                    if (j != mapTiles[i].length - 1)
+                    if (j != mapTiles.get(i).length - 1)
                         out.write(' ');
                 }
                 out.write('\n');
@@ -848,11 +866,11 @@ public class MapData {
     }
 
     public int getMapTile(int x, int y) {
-        return mapTiles[y][x];
+        return mapTiles.get(y)[x];
     }
 
     public void setMapTile(int x, int y, int tile) {
-        mapTiles[y][x] = tile;
+        mapTiles.get(y)[x] = tile;
     }
 
     public static class Sector {
@@ -998,9 +1016,9 @@ public class MapData {
     }
 
     public void nullMapData() {
-        for (int i = 0; i < mapTiles.length; i++) {
-            for (int j = 0; j < mapTiles[i].length; j++) {
-                mapTiles[i][j] = 0;
+        for (int i = 0; i < mapTiles.size(); i++) {
+            for (int j = 0; j < mapTiles.get(i).length; j++) {
+                mapTiles.get(i)[j] = 0;
             }
         }
         for (Sector[] row : sectors) {
@@ -1011,9 +1029,9 @@ public class MapData {
     }
 
     public void nullEnemyData() {
-        for (int i = 0; i < enemyPlacement.length; ++i)
-            for (int j = 0; j < enemyPlacement[i].length; ++j)
-                enemyPlacement[i][j] = 0;
+        for (int i = 0; i < enemyPlacement.size(); ++i)
+            for (int j = 0; j < enemyPlacement.get(i).length; ++j)
+                enemyPlacement.get(i)[j] = 0;
     }
 
     public void nullDoorData() {

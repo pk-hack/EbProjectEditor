@@ -679,7 +679,7 @@ public class MapDisplay extends AbstractButton implements
 
     public int getMaxScrollY() {
         // Half the screen below the map
-        int mapSize = MapData.HEIGHT_IN_TILES * MapData.TILE_WIDTH;
+        int mapSize = map.getHeightInPixels();
         int screenSize = (int) (getSize().height / (2 * zoom));
         return mapSize - screenSize;
     }
@@ -704,7 +704,7 @@ public class MapDisplay extends AbstractButton implements
         tileX = Math.max(0, tileX);
         tileY = Math.max(0, tileY);
         this.screenX = Math.min(tileX, MapData.WIDTH_IN_TILES - screenWidth);
-        this.screenY = Math.min(tileY, MapData.HEIGHT_IN_TILES - screenHeight);
+        this.screenY = Math.min(tileY, map.getHeightInTiles() - screenHeight);
     }
 
     public void centerScroll(int x, int y) {
@@ -1343,7 +1343,7 @@ public class MapDisplay extends AbstractButton implements
         newSW = (int) Math.ceil(newSW / zoom);
         newSH = (int) Math.ceil(newSH / zoom);
         newSW = Math.min(newSW, MapData.WIDTH_IN_TILES);
-        newSH = Math.min(newSH, MapData.HEIGHT_IN_TILES);
+        newSH = Math.min(newSH, map.getHeightInTiles());
         if ((newSW != screenWidth) || (newSH != screenHeight)) {
             screenWidth = newSW;
             screenHeight = newSH;
