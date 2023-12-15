@@ -5,7 +5,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.List;
 import java.util.Stack;
 
 public class MapDisplay extends AbstractButton implements
@@ -53,7 +52,10 @@ public class MapDisplay extends AbstractButton implements
     private int screenHeight = 12;
 
     // Map X and Y coordinates of the tile displayed in the top left corner
-    private int x = 0, y = 0;
+    private int screenX = 0, screenY = 0;
+    // Pixel coordinates of top map X and Y
+    private int scrollX = 0, scrollY = 0;
+
     // Data for the selected sector
     private MapData.Sector selectedSector = null;
     private int sectorX, sectorY;
@@ -215,29 +217,33 @@ public class MapDisplay extends AbstractButton implements
     }
 
     private void drawMap(Graphics2D g) {
-        int i, j, a;
         g.setPaint(Color.white);
         g.setFont(new Font("Arial", Font.PLAIN, 12));
 
+        // Translate the screen for smooth scrolling. This entire codebase is built on tile coordinates, so rather than
+        // trying to swap it over, just compare the results and translate that much.
+        g.translate(-(scrollX - MapData.TILE_WIDTH * screenX),
+                -(scrollY - MapData.TILE_HEIGHT * screenY));
+
         MapData.Sector sector;
         int pal;
-        for (i = 0; i < screenHeight; i++) {
-            for (j = 0; j < screenWidth; j++) {
-                sector = map.getSector((j + x) / MapData.SECTOR_WIDTH,
-                        (i + y) / MapData.SECTOR_HEIGHT);
+        for (int iy = 0; iy < screenHeight; iy++) {
+            for (int ix = 0; ix < screenWidth; ix++) {
+                sector = map.getSector((ix + screenX) / MapData.SECTOR_WIDTH,
+                        (iy + screenY) / MapData.SECTOR_HEIGHT);
                 pal = TileEditor.tilesets[TileEditor
                         .getDrawTilesetNumber(sector.tileset)]
                         .getPaletteNum(sector.tileset, sector.palette);
                 g.drawImage(
                         getTileImage(TileEditor
                                 .getDrawTilesetNumber(sector.tileset), map
-                                .getMapTile(x + j, y + i), pal), j
-                                * MapData.TILE_WIDTH + 1, i
+                                .getMapTile(screenX + ix, screenY + iy), pal), ix
+                                * MapData.TILE_WIDTH + 1, iy
                                 * MapData.TILE_HEIGHT + 1,
                         MapData.TILE_WIDTH, MapData.TILE_HEIGHT, this);
                 if (drawTileNums && !gamePreview) {
-                    drawNumber(g, map.getMapTile(x + j, y + i), j
-                            * MapData.TILE_WIDTH + 1, i
+                    drawNumber(g, map.getMapTile(screenX + ix, screenY + iy), ix
+                            * MapData.TILE_WIDTH + 1, iy
                             * MapData.TILE_HEIGHT + 1, false, false);
                 }
             }
@@ -249,14 +255,14 @@ public class MapDisplay extends AbstractButton implements
         if (currentMode == MapMode.MAP && (selectedSector != null)) {
             int sXt, sYt;
             if (((sXt = sectorX * MapData.SECTOR_WIDTH)
-                    + MapData.SECTOR_WIDTH >= x)
-                    && (sXt < x + screenWidth)
+                    + MapData.SECTOR_WIDTH >= screenX)
+                    && (sXt < screenX + screenWidth)
                     && ((sYt = sectorY * MapData.SECTOR_HEIGHT)
-                    + MapData.SECTOR_HEIGHT >= y)
-                    && (sYt < y + screenHeight)) {
+                    + MapData.SECTOR_HEIGHT >= screenY)
+                    && (sYt < screenY + screenHeight)) {
                 g.setPaint(Color.yellow);
-                g.draw(new Rectangle2D.Double((sXt - x)
-                        * MapData.TILE_WIDTH + 1, (sYt - y)
+                g.draw(new Rectangle2D.Double((sXt - screenX)
+                        * MapData.TILE_WIDTH + 1, (sYt - screenY)
                         * MapData.TILE_HEIGHT + 1, MapData.SECTOR_WIDTH
                         * MapData.TILE_WIDTH, MapData.SECTOR_HEIGHT
                         * MapData.TILE_HEIGHT));
@@ -272,36 +278,30 @@ public class MapDisplay extends AbstractButton implements
         if (currentMode.drawSprites()) {
             MapData.NPC npc;
             Integer[] wh;
-            java.util.List<MapData.SpriteEntry> area;
-            for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
-                    try {
-                        area = map.getSpriteArea(j >> 3, i >> 3);
-                        for (MapData.SpriteEntry e : area) {
-                            npc = map.getNPC(e.npcID);
-                            wh = map.getSpriteWH(npc.sprite);
-                            if (spriteBoxes && !gamePreview) {
-                                g.setPaint(Color.RED);
-                                g.draw(new Rectangle2D.Double(e.x + (j - x)
-                                        * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (i - y) * MapData.TILE_HEIGHT
-                                                - wh[1] + 8, wh[0] + 1,
-                                        wh[1] + 1));
-                            }
-                            g.drawImage(map.getSpriteImage(npc.sprite,
-                                            npc.direction), e.x + (j - x)
-                                            * MapData.TILE_WIDTH - wh[0] / 2 + 1,
-                                    e.y + (i - y) * MapData.TILE_HEIGHT
-                                            - wh[1] + 9, this);
-                            if (drawSpriteNums && !gamePreview) {
-                                drawNumber(g, e.npcID, e.x + (j - x)
-                                                * MapData.TILE_WIDTH - wh[0] / 2,
-                                        e.y + (i - y) * MapData.TILE_HEIGHT
-                                                - wh[1] + 8, false, true);
-                            }
+            for (int iy = screenY & (~7); iy < (screenY & (~7)) + screenHeight + 8; iy += 8) {
+                for (int ix = screenX & (~7); ix < (screenX & (~7)) + screenWidth + 8; ix += 8) {
+                    for (MapData.SpriteEntry e : map.getSpriteArea(ix >> 3, iy >> 3)) {
+                        npc = map.getNPC(e.npcID);
+                        wh = map.getSpriteWH(npc.sprite);
+                        if (spriteBoxes && !gamePreview) {
+                            g.setPaint(Color.RED);
+                            g.draw(new Rectangle2D.Double(e.x + (ix - screenX)
+                                    * MapData.TILE_WIDTH - wh[0] / 2,
+                                    e.y + (iy - screenY) * MapData.TILE_HEIGHT
+                                            - wh[1] + 8, wh[0] + 1,
+                                    wh[1] + 1));
                         }
-                    } catch (Exception e) {
-
+                        g.drawImage(map.getSpriteImage(npc.sprite,
+                                        npc.direction), e.x + (ix - screenX)
+                                        * MapData.TILE_WIDTH - wh[0] / 2 + 1,
+                                e.y + (iy - screenY) * MapData.TILE_HEIGHT
+                                        - wh[1] + 9, this);
+                        if (drawSpriteNums && !gamePreview) {
+                            drawNumber(g, e.npcID, e.x + (ix - screenX)
+                                            * MapData.TILE_WIDTH - wh[0] / 2,
+                                    e.y + (iy - screenY) * MapData.TILE_HEIGHT
+                                            - wh[1] + 8, false, true);
+                        }
                     }
                 }
             }
@@ -318,33 +318,27 @@ public class MapDisplay extends AbstractButton implements
         }
 
         if (currentMode.drawDoors()) {
-            List<MapData.Door> area;
-            for (i = y & (~7); i < (y & (~7)) + screenHeight + 8; i += 8) {
-                for (j = x & (~7); j < (x & (~7)) + screenWidth + 8; j += 8) {
-                    try {
-                        area = map.getDoorArea(j >> 3, i >> 3);
-                        for (MapData.Door e : area) {
-                            g.setPaint(e.getColor());
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
-                                    * MapData.TILE_WIDTH + 1, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 1, 8,
-                                    8));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
-                                    * MapData.TILE_WIDTH + 3, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 3, 4,
-                                    4));
-                            g.setPaint(Color.WHITE);
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
-                                    * MapData.TILE_WIDTH + 2, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 2, 6,
-                                    6));
-                            g.draw(new Rectangle2D.Double(e.x * 8 + (j - x)
-                                    * MapData.TILE_WIDTH + 4, e.y * 8
-                                    + (i - y) * MapData.TILE_HEIGHT + 4, 2,
-                                    2));
-                        }
-                    } catch (Exception e) {
-
+            for (int iy = screenY & (~7); iy < (screenY & (~7)) + screenHeight + 8; iy += 8) {
+                for (int ix = screenX & (~7); ix < (screenX & (~7)) + screenWidth + 8; ix += 8) {
+                    for (MapData.Door e : map.getDoorArea(ix >> 3, iy >> 3)) {
+                        g.setPaint(e.getColor());
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - screenX)
+                                * MapData.TILE_WIDTH + 1, e.y * 8
+                                + (iy - screenY) * MapData.TILE_HEIGHT + 1, 8,
+                                8));
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - screenX)
+                                * MapData.TILE_WIDTH + 3, e.y * 8
+                                + (iy - screenY) * MapData.TILE_HEIGHT + 3, 4,
+                                4));
+                        g.setPaint(Color.WHITE);
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - screenX)
+                                * MapData.TILE_WIDTH + 2, e.y * 8
+                                + (iy - screenY) * MapData.TILE_HEIGHT + 2, 6,
+                                6));
+                        g.draw(new Rectangle2D.Double(e.x * 8 + (ix - screenX)
+                                * MapData.TILE_WIDTH + 4, e.y * 8
+                                + (iy - screenY) * MapData.TILE_HEIGHT + 4, 2,
+                                2));
                     }
                 }
             }
@@ -379,11 +373,11 @@ public class MapDisplay extends AbstractButton implements
 
         if (currentMode.drawEnemies()) {
             g.setFont(new Font("Arial", Font.PLAIN, 12));
-            for (i = -(y % 2); i < screenHeight; i += 2) {
-                for (j = -(x % 2); j < screenWidth; j += 2) {
+            for (int iy = -(screenY % 2); iy < screenHeight; iy += 2) {
+                for (int ix = -(screenX % 2); ix < screenWidth; ix += 2) {
                     // Draw the grid
-                    Rectangle2D rect = new Rectangle2D.Double(j
-                            * MapData.TILE_WIDTH + 1, i
+                    Rectangle2D rect = new Rectangle2D.Double(ix
+                            * MapData.TILE_WIDTH + 1, iy
                             * MapData.TILE_HEIGHT + 1,
                             MapData.TILE_WIDTH * 2, MapData.TILE_HEIGHT * 2);
                     if (grid && !gamePreview) {
@@ -391,16 +385,16 @@ public class MapDisplay extends AbstractButton implements
                         g.draw(rect);
                     }
 
-                    a = map.getMapEnemyGroup((x + j) / 2, (y + i) / 2);
-                    if (a != 0) {
+                    int enemyGroup = map.getMapEnemyGroup((screenX + ix) / 2, (screenY + iy) / 2);
+                    if (enemyGroup != 0) {
                         g.setComposite(AlphaComposite.getInstance(
                                 AlphaComposite.SRC_OVER, 0.5F));
-                        g.setPaint(enemyColors[a]);
+                        g.setPaint(enemyColors[enemyGroup]);
                         g.fill(rect);
 
                         g.setComposite(AlphaComposite.getInstance(
                                 AlphaComposite.SRC_OVER, 1.0F));
-                        drawNumber(g, a, j * MapData.TILE_WIDTH + 1, i
+                        drawNumber(g, enemyGroup, ix * MapData.TILE_WIDTH + 1, iy
                                 * MapData.TILE_HEIGHT + 1, false, false);
                     }
                 }
@@ -412,26 +406,26 @@ public class MapDisplay extends AbstractButton implements
             g.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 0.8F));
             int tx1, ty1, tx2, ty2;
-            for (i = 0; i < map.numHotspots(); ++i) {
+            for (int i = 0; i < map.numHotspots(); ++i) {
                 hs = map.getHotspot(i);
                 if (hs == editHS)
                     continue;
-                tx1 = hs.x1 / 4 - x;
-                ty1 = hs.y1 / 4 - y;
-                tx2 = hs.x2 / 4 - x;
-                ty2 = hs.y2 / 4 - y;
+                tx1 = hs.x1 / 4 - screenX;
+                ty1 = hs.y1 / 4 - screenY;
+                tx2 = hs.x2 / 4 - screenX;
+                ty2 = hs.y2 / 4 - screenY;
                 if (((tx1 >= 0) && (tx1 <= screenWidth) && (ty1 >= 0) && (ty1 <= screenHeight))
                         || ((tx2 >= 0) && (tx2 <= screenWidth)
                         && (ty2 >= 0) && (ty2 <= screenHeight))) {
                     g.setPaint(Color.PINK);
-                    g.fill(new Rectangle2D.Double(hs.x1 * 8 - x
-                            * MapData.TILE_WIDTH + 1, hs.y1 * 8 - y
+                    g.fill(new Rectangle2D.Double(hs.x1 * 8 - screenX
+                            * MapData.TILE_WIDTH + 1, hs.y1 * 8 - screenY
                             * MapData.TILE_HEIGHT + 1, (hs.x2 - hs.x1) * 8,
                             (hs.y2 - hs.y1) * 8));
 
                     drawNumber(g, i,
-                            hs.x1 * 8 - x * MapData.TILE_WIDTH + 1, hs.y1
-                                    * 8 - y * MapData.TILE_HEIGHT + 1,
+                            hs.x1 * 8 - screenX * MapData.TILE_WIDTH + 1, hs.y1
+                                    * 8 - screenY * MapData.TILE_HEIGHT + 1,
                             false, false);
                 }
             }
@@ -439,8 +433,8 @@ public class MapDisplay extends AbstractButton implements
             if (currentMode == MapMode.HOTSPOT && (editHS != null)) {
                 g.setPaint(Color.WHITE);
                 if (editHSx1 != -1) {
-                    tx1 = editHSx1 * 8 - x * MapData.TILE_WIDTH + 1;
-                    ty1 = editHSy1 * 8 - y * MapData.TILE_HEIGHT + 1;
+                    tx1 = editHSx1 * 8 - screenX * MapData.TILE_WIDTH + 1;
+                    ty1 = editHSy1 * 8 - screenY * MapData.TILE_HEIGHT + 1;
                     g.fill(new Rectangle2D.Double(tx1, ty1, hsMouseX - tx1,
                             hsMouseY - ty1));
                 } else {
@@ -570,29 +564,73 @@ public class MapDisplay extends AbstractButton implements
         return sectorPal;
     }
 
-    public void setMapXY(int x, int y) {
-        x = Math.max(0, x);
-        y = Math.max(0, y);
-        this.x = Math.min(x, MapData.WIDTH_IN_TILES - screenWidth);
-        this.y = Math.min(y, MapData.HEIGHT_IN_TILES - screenHeight);
+    public int getMinScrollX() {
+        // Half the screen to the left of the map
+        return -screenWidth * MapData.TILE_WIDTH / 2;
     }
 
+    public int getMaxScrollX() {
+        // Half the screen to the right of the map
+        return (MapData.WIDTH_IN_TILES - screenWidth / 2) * MapData.TILE_WIDTH;
+    }
+
+    public int getMinScrollY() {
+        // Half the screen above the map
+        return -screenHeight * MapData.TILE_HEIGHT / 2;
+    }
+
+    public int getMaxScrollY() {
+        // Half the screen below the map
+        return (MapData.HEIGHT_IN_TILES - screenHeight / 2) * MapData.TILE_HEIGHT;
+    }
+
+    public void setMapXY(int x, int y) {
+        setMapXYPixel(x * MapData.TILE_WIDTH, y * MapData.TILE_HEIGHT);
+    }
+
+    public void setMapXYPixel(int x, int y) {
+        x = Math.min(x, getMaxScrollX());
+        x = Math.max(x, getMinScrollX());
+        y = Math.min(y, getMaxScrollY());
+        y = Math.max(y, getMinScrollY());
+        scrollX = x;
+        scrollY = y;
+        x /= MapData.TILE_WIDTH;
+        y /= MapData.TILE_HEIGHT;
+        x = Math.max(0, x);
+        y = Math.max(0, y);
+        this.screenX = Math.min(x, MapData.WIDTH_IN_TILES - screenWidth);
+        this.screenY = Math.min(y, MapData.HEIGHT_IN_TILES - screenHeight);
+    }
+
+    public void centerScroll(int x, int y) {
+        setMapXYPixel(
+                x - MapData.TILE_WIDTH * screenWidth / 2,
+                y - MapData.TILE_HEIGHT * screenHeight / 2);
+    }
     public void setMapX(int x) {
-        setMapXY(x, y);
+        setMapXY(x, screenY);
     }
 
     public void setMapY(int y) {
-        setMapXY(x, y);
+        setMapXY(screenX, y);
     }
 
     public int getMapX() {
-        return x;
+        return screenX;
     }
 
     public int getMapY() {
-        return y;
+        return screenY;
     }
 
+    public int getScrollX() {
+        return scrollX;
+    }
+
+    public int getScrollY() {
+        return scrollY;
+    }
     public int getSectorX() {
         return sectorX;
     }
@@ -627,16 +665,27 @@ public class MapDisplay extends AbstractButton implements
         this.fireActionPerformed(sectorEvent);
     }
 
+    public int translateMouseX(MouseEvent e) {
+        return e.getX() + scrollX - MapData.TILE_WIDTH * screenX;
+    }
+
+    public int translateMouseY(MouseEvent e) {
+        return e.getY() + scrollY - MapData.TILE_HEIGHT * screenY;
+    }
+
     public void mouseClicked(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
+
         // Make sure they didn't click on the border
-        if ((e.getX() >= 1)
-                && (e.getX() <= screenWidth * MapData.TILE_WIDTH + 2)
-                && (e.getY() >= 1)
-                && (e.getY() <= screenHeight * MapData.TILE_HEIGHT + 2)) {
+        if ((mouseX >= 1)
+                && (mouseX <= screenWidth * MapData.TILE_WIDTH + 2)
+                && (mouseY >= 1)
+                && (mouseY <= screenHeight * MapData.TILE_HEIGHT + 2)) {
             if (currentMode == MapMode.MAP) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    int mX = (e.getX() - 1) / MapData.TILE_WIDTH + x;
-                    int mY = (e.getY() - 1) / MapData.TILE_HEIGHT + y;
+                    int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
+                    int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
                     if (e.isShiftDown()) {
                         tileSelector.selectTile(map.getMapTile(mX, mY));
                     } else if (!e.isControlDown()) {
@@ -653,17 +702,17 @@ public class MapDisplay extends AbstractButton implements
                     }
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     // Make sure they didn't click on the border
-                    int sX = (x + ((e.getX() - 1) / MapData.TILE_WIDTH))
+                    int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
                             / MapData.SECTOR_WIDTH;
-                    int sY = (y + ((e.getY() - 1) / MapData.TILE_HEIGHT))
+                    int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
                             / MapData.SECTOR_HEIGHT;
                     selectSector(sX, sY);
                 }
             } else if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX();
+                    popupX = e.getX(); // Don't use translated coords
                     popupY = e.getY();
-                    popupSE = getSpriteEntryFromMouseXY(e.getX(), e.getY());
+                    popupSE = getSpriteEntryFromMouseXY(mouseX, mouseY);
                     if (popupSE == null) {
                         detailsNPC.setText("No Sprite Selected");
                         delNPC.setEnabled(false);
@@ -673,9 +722,9 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(false);
                         moveNPC.setEnabled(false);
                     } else {
-                        final int areaX = ((x + popupX / MapData.TILE_WIDTH) / 8)
+                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / 8)
                                 * MapData.TILE_WIDTH * 8;
-                        final int areaY = ((y + popupY
+                        final int areaY = ((screenY + popupY
                                 / MapData.TILE_HEIGHT) / 8)
                                 * MapData.TILE_HEIGHT * 8;
                         detailsNPC.setText("Sprite @ ("
@@ -689,13 +738,13 @@ public class MapDisplay extends AbstractButton implements
                         switchNPC.setEnabled(true);
                         moveNPC.setEnabled(true);
                     }
-                    spritePopupMenu.show(this, e.getX(), e.getY());
+                    spritePopupMenu.show(this, mouseX, mouseY);
                 }
             } else if (currentMode == MapMode.DOOR) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    popupX = e.getX();
+                    popupX = e.getX(); // Don't use translated coords
                     popupY = e.getY();
-                    popupDoor = getDoorFromMouseXY(e.getX(), e.getY());
+                    popupDoor = getDoorFromMouseXY(mouseX, mouseY);
                     if (popupDoor == null) {
                         detailsDoor.setText("No Door Selected");
                         delDoor.setEnabled(false);
@@ -704,9 +753,9 @@ public class MapDisplay extends AbstractButton implements
                         editDoor.setEnabled(false);
                         jumpDoor.setEnabled(false);
                     } else {
-                        final int areaX = ((x + popupX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
+                        final int areaX = ((screenX + popupX / MapData.TILE_WIDTH) / MapData.SECTOR_WIDTH)
                                 * MapData.SECTOR_WIDTH * (MapData.TILE_WIDTH / 8);
-                        final int areaY = ((y + popupY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
+                        final int areaY = ((screenY + popupY / MapData.TILE_HEIGHT) / (MapData.SECTOR_HEIGHT * 2))
                                 * MapData.SECTOR_HEIGHT * (MapData.TILE_HEIGHT / 8);
                         detailsDoor.setText(ToolModule
                                 .capitalize(popupDoor.type)
@@ -721,17 +770,17 @@ public class MapDisplay extends AbstractButton implements
                         jumpDoor.setEnabled(popupDoor.type.equals("door"));
 
                     }
-                    doorPopupMenu.show(this, e.getX(), e.getY());
+                    doorPopupMenu.show(this, mouseX, mouseY);
                 }
             } else if (currentMode == MapMode.SEEK_DOOR) {
-                doorSeeker.seek(x * 4 + seekDrawX / 8, y * 4 + seekDrawY
+                doorSeeker.seek(screenX * 4 + seekDrawX / 8, screenY * 4 + seekDrawY
                         / 8);
                 doorSeeker = null;
                 changeMode(currentMode);
                 repaint();
             } else if (currentMode == MapMode.ENEMY) {
-                int eX = ((e.getX() - 1) / MapData.TILE_WIDTH + x) / 2;
-                int eY = ((e.getY() - 1) / MapData.TILE_HEIGHT + y) / 2;
+                int eX = ((mouseX - 1) / MapData.TILE_WIDTH + screenX) / 2;
+                int eY = ((mouseY - 1) / MapData.TILE_HEIGHT + screenY) / 2;
                 if (e.isShiftDown()) {
                     tileSelector.selectTile(map.getMapEnemyGroup(eX, eY));
                 } else {
@@ -740,8 +789,8 @@ public class MapDisplay extends AbstractButton implements
                     repaint();
                 }
             } else if (currentMode == MapMode.HOTSPOT) {
-                int mx = ((e.getX() - 1) / 8) + (x * 4), my = ((e.getY() - 1) / 8)
-                        + (y * 4);
+                int mx = ((mouseX - 1) / 8) + (screenX * 4), my = ((mouseY - 1) / 8)
+                        + (screenY * 4);
                 if (editHS != null) {
                     if (editHSx1 == -1) {
                         editHSx1 = mx;
@@ -762,8 +811,8 @@ public class MapDisplay extends AbstractButton implements
                                 && (my <= hs.y2)) {
                             editHS = hs;
                             editHSx1 = editHSy1 = -1;
-                            hsMouseX = e.getX() & (~7);
-                            hsMouseY = e.getY() & (~7);
+                            hsMouseX = mouseX & (~7);
+                            hsMouseY = mouseY & (~7);
                             repaint();
                             return;
                         }
@@ -796,8 +845,8 @@ public class MapDisplay extends AbstractButton implements
                 repaint();
             }
         } else if (ae.getActionCommand().equals("moveNPC")) {
-            int areaX = (x + popupX / MapData.TILE_WIDTH) / 8;
-            int areaY = (y + popupY / MapData.TILE_HEIGHT) / 8;
+            int areaX = (screenX + popupX / MapData.TILE_WIDTH) / 8;
+            int areaY = (screenY + popupY / MapData.TILE_HEIGHT) / 8;
 
             final int newSpriteX, newSpriteY;
 
@@ -842,31 +891,31 @@ public class MapDisplay extends AbstractButton implements
     // Sprites
     private MapData.SpriteEntry getSpriteEntryFromMouseXY(int mouseX,
                                                           int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         return map.getSpriteEntryFromCoords(areaX, areaY, mouseX, mouseY);
     }
 
     private int popNpcIdFromMouseXY(int mouseX, int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         return map.popNPCFromCoords(areaX, areaY, mouseX, mouseY);
     }
 
     private void pushNpcIdFromMouseXY(int npc, int mouseX, int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         map.pushNPCFromCoords(npc, areaX, areaY, mouseX, mouseY);
     }
@@ -881,32 +930,32 @@ public class MapDisplay extends AbstractButton implements
 
     // Doors
     private MapData.Door getDoorFromMouseXY(int mouseX, int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         return map.getDoorFromCoords(areaX, areaY, mouseX / 8, mouseY / 8);
     }
 
     private MapData.Door popDoorFromMouseXY(int mouseX, int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         return map.popDoorFromCoords(areaX, areaY, mouseX / 8, mouseY / 8);
     }
 
     private void pushDoorFromMouseXY(MapData.Door door, int mouseX,
                                      int mouseY) {
-        int areaX = (x + mouseX / MapData.TILE_WIDTH) / 8, areaY = (y + mouseY
+        int areaX = (screenX + mouseX / MapData.TILE_WIDTH) / 8, areaY = (screenY + mouseY
                 / MapData.TILE_HEIGHT) / 8;
-        mouseX += (x % 8) * MapData.TILE_WIDTH;
+        mouseX += (screenX % 8) * MapData.TILE_WIDTH;
         mouseX %= (MapData.TILE_WIDTH * 8);
-        mouseY += (y % 8) * MapData.TILE_HEIGHT;
+        mouseY += (screenY % 8) * MapData.TILE_HEIGHT;
         mouseY %= (MapData.TILE_HEIGHT * 8);
         door.x = mouseX / 8;
         door.y = mouseY / 8;
@@ -919,15 +968,16 @@ public class MapDisplay extends AbstractButton implements
                     new Point(0, 0), "blank cursor");
 
     public void mousePressed(MouseEvent e) {
-        int mx = e.getX(), my = e.getY();
+        int mx = translateMouseX(e);
+        int my = translateMouseY(e);
         if (e.isControlDown() && (e.getButton() == MouseEvent.BUTTON1)) {
             if (previousMode == null) {
                 previousMode = currentMode;
                 changeMode(MapMode.PREVIEW);
 
                 tvPreview = true;
-                tvPreviewX = e.getX();
-                tvPreviewY = e.getY();
+                tvPreviewX = mx;
+                tvPreviewY = my;
 
                 tvPreviewH = 224 / 2;
                 if (prefs.getValueAsBoolean("maskOverscan")) {
@@ -963,7 +1013,8 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseReleased(MouseEvent e) {
-        int mx = e.getX(), my = e.getY();
+        int mx = translateMouseX(e);
+        int my = translateMouseY(e);
         if (e.getButton() == 1) {
             if (previousMode != null) {
                 changeMode(previousMode);
@@ -997,48 +1048,52 @@ public class MapDisplay extends AbstractButton implements
     }
 
     public void mouseDragged(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
         if (tvPreview) {
-            tvPreviewX = e.getX();
-            tvPreviewY = e.getY();
+            tvPreviewX = mouseX;
+            tvPreviewY = mouseY;
             repaint();
         } else if (movingNPC != -1) {
-            movingDrawX = e.getX() - movingNPCdim[0] / 2 + 1;
-            movingDrawY = e.getY() - movingNPCdim[1] + 9;
+            movingDrawX = mouseX - movingNPCdim[0] / 2 + 1;
+            movingDrawY = mouseY - movingNPCdim[1] + 9;
             repaint();
         } else if (movingDoor != null) {
-            movingDrawX = e.getX() & (~7);
-            movingDrawY = e.getY() & (~7);
+            movingDrawX = mouseX & (~7);
+            movingDrawY = mouseY & (~7);
             repaint();
         }
 
-        updateCoordLabels(e.getX(), e.getY());
+        updateCoordLabels(mouseX, mouseY);
     }
 
     public void mouseMoved(MouseEvent e) {
+        int mouseX = translateMouseX(e);
+        int mouseY = translateMouseY(e);
         if (currentMode == MapMode.SEEK_DOOR) {
-            seekDrawX = e.getX() & (~7);
-            seekDrawY = e.getY() & (~7);
+            seekDrawX = mouseX & (~7);
+            seekDrawY = mouseY & (~7);
             repaint();
         } else if (currentMode == MapMode.HOTSPOT && (editHS != null)) {
-            hsMouseX = e.getX() & (~7);
-            hsMouseY = e.getY() & (~7);
+            hsMouseX = mouseX & (~7);
+            hsMouseY = mouseY & (~7);
             repaint();
         }
 
-        updateCoordLabels(e.getX(), e.getY());
+        updateCoordLabels(mouseX, mouseY);
     }
 
     private void updateCoordLabels(final int mouseX, final int mouseY) {
         if ((mouseX >= 0) && (mouseY >= 0)) {
             pixelCoordLabel.setText("Pixel X,Y: ("
-                    + (x * MapData.TILE_WIDTH + mouseX - 1) + ","
-                    + (y * MapData.TILE_WIDTH + mouseY - 1) + ")");
+                    + (screenX * MapData.TILE_WIDTH + mouseX - 1) + ","
+                    + (screenY * MapData.TILE_WIDTH + mouseY - 1) + ")");
             warpCoordLabel.setText("Warp X,Y: ("
-                    + (x * 4 + (mouseX - 1) / 8) + ","
-                    + (y * 4 + (mouseY - 1) / 8) + ")");
+                    + (screenX * 4 + (mouseX - 1) / 8) + ","
+                    + (screenY * 4 + (mouseY - 1) / 8) + ")");
             tileCoordLabel.setText("Tile X,Y: ("
-                    + (x + (mouseX - 1) / MapData.TILE_WIDTH) + ","
-                    + (y + (mouseY - 1) / MapData.TILE_HEIGHT) + ")");
+                    + (screenX + (mouseX - 1) / MapData.TILE_WIDTH) + ","
+                    + (screenY + (mouseY - 1) / MapData.TILE_HEIGHT) + ")");
         }
     }
 
@@ -1134,7 +1189,7 @@ public class MapDisplay extends AbstractButton implements
             screenWidth = newSW;
             screenHeight = newSH;
 
-            setMapXY(x, y);
+            setMapXY(screenX, screenY);
 
             setPreferredSize(new Dimension(screenWidth * MapData.TILE_WIDTH
                     + 2, screenHeight * MapData.TILE_HEIGHT + 2));
