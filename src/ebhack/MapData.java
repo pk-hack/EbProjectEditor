@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.List;
 
 public class MapData {
+    public static final int CHUNK_HEIGHT = 40;
     public static final int WIDTH_IN_TILES = 32 * 8;
     public static final int SECTOR_WIDTH = 8;
     public static final int SECTOR_HEIGHT = 4;
@@ -45,33 +46,6 @@ public class MapData {
     }
 
     public void reset() {
-        // TODO - delete all of this once you have non-hard-coded sizes
-        int HEIGHT_IN_TILES = 80 * 4;
-        int HEIGHT_IN_SECTORS = HEIGHT_IN_TILES / SECTOR_HEIGHT;
-        int HEIGHT_IN_DOUBLE_SECTORS = HEIGHT_IN_TILES / (SECTOR_HEIGHT * 2);
-        for (int i = 0; i < HEIGHT_IN_TILES; i++) {
-            mapTiles.add(new Integer[WIDTH_IN_TILES]);
-        }
-        for (int i = 0; i < HEIGHT_IN_SECTORS; i++) {
-            sectors.add(new Sector[WIDTH_IN_SECTORS]);
-        }
-        for (int i = 0; i < sectors.size(); ++i)
-            for (int j = 0; j < sectors.get(i).length; ++j)
-                sectors.get(i)[j] = new Sector();
-        for (int i = 0; i < HEIGHT_IN_DOUBLE_SECTORS; i++) {
-            spriteAreas.add(new ArrayList[WIDTH_IN_SECTORS]);
-            doorAreas.add(new ArrayList[WIDTH_IN_SECTORS]);
-        }
-        for (int i = 0; i < spriteAreas.size(); ++i)
-            for (int j = 0; j < spriteAreas.get(i).length; ++j)
-                spriteAreas.get(i)[j] = new ArrayList<SpriteEntry>();
-        for (int i = 0; i < doorAreas.size(); ++i)
-            for (int j = 0; j < doorAreas.get(i).length; ++j)
-                doorAreas.get(i)[j] = new ArrayList<Door>();
-        for (int i = 0; i < HEIGHT_IN_TILES / 2; i++) {
-            enemyPlacement.add(new Integer[WIDTH_IN_TILES / 2]);
-        }
-         // TODO - end todo
         npcs = new ArrayList<NPC>();
         spriteGroups = new ArrayList<Image[]>();
         spriteGroupDims = new ArrayList<Integer[]>();
@@ -283,6 +257,51 @@ public class MapData {
         }
     }
 
+    /**
+     * Expands the map downwards by CHUNK_HEIGHT (40 tiles).
+     * Due to limitations of Earthbound's map engine, it can only expand downwards, and by multiples of 40 tiles.
+     * This is quite a large amount, so I don't think any parameterization is needed.
+     */
+    public void expandMap() {
+        // Copy the tiles, because empty tiles are boring
+        for (int i = 0; i < CHUNK_HEIGHT; i++) {
+            Integer[] row = new Integer[WIDTH_IN_TILES];
+            mapTiles.add(row);
+            for (int j = 0; j < WIDTH_IN_TILES; j++) {
+                row[j] = mapTiles.get(i)[j];
+            }
+        }
+        // Copy sectors, since blank sectors actually crash
+        for (int i = 0; i < CHUNK_HEIGHT / SECTOR_HEIGHT; i++) {
+            Sector[] row = new Sector[WIDTH_IN_SECTORS];
+            sectors.add(row);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                row[ix] = new Sector();
+                row[ix].copy(sectors.get(i)[ix]);
+            }
+        }
+        // These can fill in with empty fine
+        for (int i = 0; i < CHUNK_HEIGHT / (2 * SECTOR_HEIGHT); i++) {
+            ArrayList<Door>[] doors = new ArrayList[WIDTH_IN_SECTORS];
+            doorAreas.add(doors);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                doors[ix] = new ArrayList<>();
+            }
+            ArrayList<SpriteEntry>[] sprites = new ArrayList[WIDTH_IN_SECTORS];
+            spriteAreas.add(sprites);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                sprites[ix] = new ArrayList<>();
+            }
+        }
+        for (int i = 0; i < CHUNK_HEIGHT / 2; i++) {
+            Integer[] row = new Integer[WIDTH_IN_TILES / 2];
+            enemyPlacement.add(row);
+            for (int ix = 0; ix < WIDTH_IN_TILES / 2; ix++) {
+                row[ix] = 0;
+            }
+        }
+    }
+
     private void importNPCs(File f) {
         InputStream input;
         try {
@@ -388,9 +407,6 @@ public class MapData {
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
         }
     }
 
@@ -492,6 +508,13 @@ public class MapData {
             for (Map.Entry<Integer, Map<Integer, java.util.List<Map<String, Object>>>> rowEntry : doorsMap
                     .entrySet()) {
                 y = rowEntry.getKey();
+                if (doorAreas.size() <= y) {
+                    ArrayList<Door>[] row = new ArrayList[WIDTH_IN_SECTORS];
+                    doorAreas.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new ArrayList<>();
+                    }
+                }
                 for (Map.Entry<Integer, java.util.List<Map<String, Object>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
@@ -601,6 +624,13 @@ public class MapData {
             for (Map.Entry<Integer, Map<Integer, java.util.List<Map<String, Integer>>>> rowEntry : spritesMap
                     .entrySet()) {
                 y = rowEntry.getKey();
+                if (spriteAreas.size() <= y) {
+                    ArrayList<SpriteEntry>[] row = new ArrayList[WIDTH_IN_SECTORS];
+                    spriteAreas.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new ArrayList<>();
+                    }
+                }
                 for (Map.Entry<Integer, java.util.List<Map<String, Integer>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
@@ -724,6 +754,9 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / (WIDTH_IN_TILES / 2);
                 x = entry.getKey() % (WIDTH_IN_TILES / 2);
+                if (enemyPlacement.size() <= y) {
+                    enemyPlacement.add(new Integer[WIDTH_IN_TILES / 2]);
+                }
                 enemyPlacement.get(y)[x] = entry.getValue().get(
                         "Enemy Map Group");
             }
@@ -771,6 +804,13 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / WIDTH_IN_SECTORS;
                 x = entry.getKey() % WIDTH_IN_SECTORS;
+                if (sectors.size() <= y) {
+                    Sector[] row = new Sector[WIDTH_IN_SECTORS];
+                    sectors.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new Sector();
+                    }
+                }
                 sec = sectors.get(y)[x];
                 sec.tileset = (Integer) (entry.getValue().get("Tileset"));
                 sec.palette = (Integer) (entry.getValue().get("Palette"));
@@ -829,15 +869,13 @@ public class MapData {
     }
 
     private void setMapTilesFromStream(InputStream in) {
-        String tmp;
+        Scanner scanner = new Scanner(in);
         try {
-            for (int i = 0; i < mapTiles.size(); i++) {
-                for (int j = 0; j < mapTiles.get(i).length; j++) {
-                    tmp = "" + ((char) in.read());
-                    tmp += (char) in.read();
-                    tmp += (char) in.read();
-                    mapTiles.get(i)[j] = Integer.parseInt(tmp, 16);
-                    in.read(); // " " or "\n"
+            while (scanner.hasNextInt(16)) {
+                Integer[] row = new Integer[WIDTH_IN_TILES];
+                mapTiles.add(row);
+                for (int j = 0; j < WIDTH_IN_TILES; j++) {
+                    row[j] = scanner.nextInt(16);
                 }
             }
         } catch (Exception e) {

@@ -214,8 +214,10 @@ public class MapEditor extends ToolModule implements ActionListener,
 		menuBar.add(menu);
 
         menu = new JMenu("Tools");
-        menu.add(ToolModule.createJMenuItem("Export as Image", 'i', "control i",
-                "exportAsImage", this));
+		menu.add(ToolModule.createJMenuItem("Expand map", 'i', null,
+				"expandMap", this));
+		menu.add(ToolModule.createJMenuItem("Export as Image", 'i', "control i",
+				"exportAsImage", this));
         menuBar.add(menu);
 
 		mainWindow.setJMenuBar(menuBar);
@@ -881,6 +883,12 @@ public class MapEditor extends ToolModule implements ActionListener,
 						"There are no actions to redo.", "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
+		} else if (e.getActionCommand().equals("expandMap")) {
+			map.expandMap();
+			// TODO: why is setting xy pixel to itself needed here? Doesn't repaint if you don't.
+			mapDisplay.setMapXYPixel(mapDisplay.getScrollX(), mapDisplay.getScrollY());
+			mapDisplay.repaint();
+			updateXYScrollBars();
 		} else if (e.getActionCommand().equals("exportAsImage")) {
             final JTextField inputX = ToolModule.createSizedJTextField(
                     Integer.toString(MapData.WIDTH_IN_TILES).length(), true);
