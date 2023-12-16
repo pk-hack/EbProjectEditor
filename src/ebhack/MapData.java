@@ -52,6 +52,16 @@ public class MapData {
         hotspots = new Hotspot[56];
         for (int i = 0; i < hotspots.length; ++i)
             hotspots[i] = new Hotspot();
+
+        mapTiles.clear();
+        sectors.clear();
+        spriteAreas.clear();
+        doorAreas.clear();
+        enemyPlacement.clear();
+        mapEnemyGroups.clear();
+        enemyGroups.clear();
+        enemyOverworldSprites.clear();
+        enemySpriteImages.clear();
     }
 
     public void load(Project proj) {
