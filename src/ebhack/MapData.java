@@ -4,6 +4,7 @@ import ebhack.types.EnemyGroup;
 import ebhack.types.MapEnemyGroup;
 import ebhack.types.PsiTeleportDestination;
 import ebhack.types.TeleportDestination;
+import ebhack.types.CustomSectorData;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -15,15 +16,14 @@ import java.util.*;
 import java.util.List;
 
 public class MapData {
+    public static final int CHUNK_HEIGHT = 40;
     public static final int WIDTH_IN_TILES = 32 * 8;
-    public static final int HEIGHT_IN_TILES = 80 * 4;
     public static final int SECTOR_WIDTH = 8;
     public static final int SECTOR_HEIGHT = 4;
     public static final int WIDTH_IN_SECTORS = WIDTH_IN_TILES
             / SECTOR_WIDTH;
-    public static final int HEIGHT_IN_SECTORS = HEIGHT_IN_TILES
-            / SECTOR_HEIGHT;
-    public static final int HEIGHT_IN_DOUBLE_SECTORS = HEIGHT_IN_TILES / (SECTOR_HEIGHT * 2);
+    public static final int SECTOR_WIDTH_IN_PIXELS = SECTOR_WIDTH * 32;
+    public static final int SECTOR_HEIGHT_IN_PIXELS = SECTOR_HEIGHT * 32;
     public static final int TILE_WIDTH = 32;
     public static final int TILE_HEIGHT = 32;
 
@@ -31,14 +31,14 @@ public class MapData {
     public static final int NUM_DRAW_TSETS = 20;
 
     // Stores the map tiles
-    private int[][] mapTiles;
-    private Sector[][] sectors;
-    private ArrayList<SpriteEntry>[][] spriteAreas;
-    private ArrayList<Door>[][] doorAreas;
+    private ArrayList<Integer[]> mapTiles = new ArrayList<>();
+    private ArrayList<Sector[]> sectors = new ArrayList<>();
+    private ArrayList<ArrayList<SpriteEntry>[]> spriteAreas = new ArrayList<>();
+    private ArrayList<ArrayList<Door>[]> doorAreas = new ArrayList<>();
     private ArrayList<NPC> npcs;
     private static ArrayList<Image[]> spriteGroups;
     private static ArrayList<Integer[]> spriteGroupDims;
-    private int[][] enemyPlacement;
+    private ArrayList<Integer[]> enemyPlacement = new ArrayList<>();
     private Hotspot[] hotspots;
     private final ArrayList<TeleportDestination> teleportDestinations = new ArrayList<>();
     private final ArrayList<PsiTeleportDestination> psiTeleportDestinations = new ArrayList<>();
@@ -46,34 +46,26 @@ public class MapData {
     private final ArrayList<EnemyGroup> enemyGroups = new ArrayList<>();
     private final ArrayList<Integer> enemyOverworldSprites = new ArrayList<>();
     private final ArrayList<Image> enemySpriteImages = new ArrayList<>();
+    private final CustomSectorData customSectorData = new CustomSectorData();
 
     public MapData() {
         reset();
     }
 
     public void reset() {
-        mapTiles = new int[HEIGHT_IN_TILES][WIDTH_IN_TILES];
-        sectors = new Sector[HEIGHT_IN_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < sectors.length; ++i)
-            for (int j = 0; j < sectors[i].length; ++j)
-                sectors[i][j] = new Sector();
-        spriteAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < spriteAreas.length; ++i)
-            for (int j = 0; j < spriteAreas[i].length; ++j)
-                spriteAreas[i][j] = new ArrayList<SpriteEntry>();
-        doorAreas = new ArrayList[HEIGHT_IN_DOUBLE_SECTORS][WIDTH_IN_SECTORS];
-        for (int i = 0; i < doorAreas.length; ++i)
-            for (int j = 0; j < doorAreas[i].length; ++j)
-                doorAreas[i][j] = new ArrayList<Door>();
         npcs = new ArrayList<NPC>();
         spriteGroups = new ArrayList<Image[]>();
         spriteGroupDims = new ArrayList<Integer[]>();
-        enemyPlacement = new int[HEIGHT_IN_TILES / 2][WIDTH_IN_TILES / 2];
         hotspots = new Hotspot[56];
         for (int i = 0; i < hotspots.length; ++i)
             hotspots[i] = new Hotspot();
         teleportDestinations.clear();
         psiTeleportDestinations.clear();
+        mapTiles.clear();
+        sectors.clear();
+        spriteAreas.clear();
+        doorAreas.clear();
+        enemyPlacement.clear();
         mapEnemyGroups.clear();
         enemyGroups.clear();
         enemyOverworldSprites.clear();
@@ -96,6 +88,7 @@ public class MapData {
                 "teleport_destination_table")));
         importPsiTeleports(new File(proj.getFilename("eb.MiscTablesModule",
                 "psi_teleport_dest_table")));
+        importCustomSectorData(proj);
         loadExtraResources(proj);
     }
 
@@ -120,6 +113,7 @@ public class MapData {
         exportHotspots(new File(proj.getFilename("eb.MiscTablesModule",
                 "map_hotspots")));
         exportTeleports(proj);
+        exportCustomSectorData(proj);
     }
 
     public NPC getNPC(int n) {
@@ -156,7 +150,7 @@ public class MapData {
                                                 int x, int y) {
         Integer[] wh;
         NPC npc;
-        for (SpriteEntry e : spriteAreas[areaY][areaX]) {
+        for (SpriteEntry e : spriteAreas.get(areaY)[areaX]) {
             npc = npcs.get(e.npcID);
             wh = spriteGroupDims.get(npc.sprite);
             if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
@@ -170,12 +164,12 @@ public class MapData {
     public int popNPCFromCoords(int areaX, int areaY, int x, int y) {
         Integer[] wh;
         NPC npc;
-        for (SpriteEntry e : spriteAreas[areaY][areaX]) {
+        for (SpriteEntry e : spriteAreas.get(areaY)[areaX]) {
             npc = npcs.get(e.npcID);
             wh = spriteGroupDims.get(npc.sprite);
             if ((e.x >= x - wh[0] / 2) && (e.x <= x + wh[0] / 2)
                     && (e.y >= y - wh[1] / 2) && (e.y <= y + wh[1] / 2)) {
-                spriteAreas[areaY][areaX].remove(e);
+                spriteAreas.get(areaY)[areaX].remove(e);
                 return e.npcID;
             }
         }
@@ -185,29 +179,29 @@ public class MapData {
     public void pushNPCFromCoords(int npcid, int areaX, int areaY, int x,
                                   int y) {
         if ((areaX >= 0) && (areaY >= 0))
-            spriteAreas[areaY][areaX].add(new SpriteEntry(x, y, npcid));
+            spriteAreas.get(areaY)[areaX].add(new SpriteEntry(x, y, npcid));
     }
 
     public List<SpriteEntry> getSpriteArea(int areaX, int areaY) {
         if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
-                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+                || areaY < 0 || areaY >= spriteAreas.size()) {
             return Collections.emptyList();
         }
-        return spriteAreas[areaY][areaX];
+        return spriteAreas.get(areaY)[areaX];
     }
 
     // Door Editing
 
     public java.util.List<Door> getDoorArea(int areaX, int areaY) {
         if (areaX < 0 || areaX >= WIDTH_IN_SECTORS
-                || areaY < 0 || areaY >= HEIGHT_IN_DOUBLE_SECTORS) {
+                || areaY < 0 || areaY >= doorAreas.size()) {
             return Collections.emptyList();
         }
-        return doorAreas[areaY][areaX];
+        return doorAreas.get(areaY)[areaX];
     }
 
     public Door getDoorFromCoords(int areaX, int areaY, int x, int y) {
-        for (Door e : doorAreas[areaY][areaX]) {
+        for (Door e : doorAreas.get(areaY)[areaX]) {
             if ((x <= e.x + 1) && (x >= e.x) && (y <= e.y + 1)
                     && (y >= e.y)) {
                 return e;
@@ -217,10 +211,10 @@ public class MapData {
     }
 
     public Door popDoorFromCoords(int areaX, int areaY, int x, int y) {
-        for (Door e : doorAreas[areaY][areaX]) {
+        for (Door e : doorAreas.get(areaY)[areaX]) {
             if ((x <= e.x + 1) && (x >= e.x) && (y <= e.y + 1)
                     && (y >= e.y)) {
-                doorAreas[areaY][areaX].remove(e);
+                doorAreas.get(areaY)[areaX].remove(e);
                 return e;
             }
         }
@@ -229,17 +223,17 @@ public class MapData {
 
     public void pushDoorFromCoords(Door door, int areaX, int areaY) {
         if ((areaX >= 0) && (areaY >= 0))
-            doorAreas[areaY][areaX].add(door);
+            doorAreas.get(areaY)[areaX].add(door);
     }
 
     // Enemy Editing
 
     public int getMapEnemyGroup(int x, int y) {
-        return enemyPlacement[y][x];
+        return enemyPlacement.get(y)[x];
     }
 
     public void setMapEnemyGroup(int x, int y, int val) {
-        enemyPlacement[y][x] = val;
+        enemyPlacement.get(y)[x] = val;
     }
 
     // Hotspot
@@ -264,7 +258,7 @@ public class MapData {
     // Other
 
     public Sector getSector(int sectorX, int sectorY) {
-        return sectors[sectorY][sectorX];
+        return sectors.get(sectorY)[sectorX];
     }
 
     public Image getSpriteImage(int sprite, int direction) {
@@ -297,6 +291,53 @@ public class MapData {
         }
     }
 
+    /**
+     * Expands the map downwards by CHUNK_HEIGHT (40 tiles).
+     * Due to limitations of Earthbound's map engine, it can only expand downwards, and by multiples of 40 tiles.
+     * This is quite a large amount, so I don't think any parameterization is needed.
+     */
+    public void expandMap() {
+        // Copy the tiles, because empty tiles are boring
+        for (int i = 0; i < CHUNK_HEIGHT; i++) {
+            Integer[] row = new Integer[WIDTH_IN_TILES];
+            mapTiles.add(row);
+            for (int j = 0; j < WIDTH_IN_TILES; j++) {
+                row[j] = mapTiles.get(i)[j];
+            }
+        }
+        // Copy sectors, since blank sectors actually crash
+        for (int i = 0; i < CHUNK_HEIGHT / SECTOR_HEIGHT; i++) {
+            Sector[] row = new Sector[WIDTH_IN_SECTORS];
+            sectors.add(row);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                row[ix] = new Sector();
+                row[ix].copy(sectors.get(i)[ix]);
+            }
+        }
+        // These can fill in with empty fine
+        for (int i = 0; i < CHUNK_HEIGHT / (2 * SECTOR_HEIGHT); i++) {
+            ArrayList<Door>[] doors = new ArrayList[WIDTH_IN_SECTORS];
+            doorAreas.add(doors);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                doors[ix] = new ArrayList<>();
+            }
+            ArrayList<SpriteEntry>[] sprites = new ArrayList[WIDTH_IN_SECTORS];
+            spriteAreas.add(sprites);
+            for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                sprites[ix] = new ArrayList<>();
+            }
+        }
+        for (int i = 0; i < CHUNK_HEIGHT / 2; i++) {
+            Integer[] row = new Integer[WIDTH_IN_TILES / 2];
+            enemyPlacement.add(row);
+            for (int ix = 0; ix < WIDTH_IN_TILES / 2; ix++) {
+                row[ix] = 0;
+            }
+        }
+        // Expand custom sector data
+        customSectorData.extend(CHUNK_HEIGHT / SECTOR_HEIGHT);
+    }
+
     private void importNPCs(File f) {
         InputStream input;
         try {
@@ -315,6 +356,14 @@ public class MapData {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    public CustomSectorData getCustomSectorData() {
+        return customSectorData;
+    }
+
+    public int getSectorCount() {
+        return this.sectors.size() * WIDTH_IN_SECTORS;
     }
 
     private void importSpriteGroups(Project proj) {
@@ -403,6 +452,18 @@ public class MapData {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getHeightInPixels() {
+        return mapTiles.size() * TILE_HEIGHT;
+    }
+
+    public int getHeightInTiles() {
+        return mapTiles.size();
+    }
+
+    public int getHeightInSectors() {
+        return sectors.size();
     }
 
     public static class Door {
@@ -495,10 +556,17 @@ public class MapData {
             for (Map.Entry<Integer, Map<Integer, java.util.List<Map<String, Object>>>> rowEntry : doorsMap
                     .entrySet()) {
                 y = rowEntry.getKey();
+                if (doorAreas.size() <= y) {
+                    ArrayList<Door>[] row = new ArrayList[WIDTH_IN_SECTORS];
+                    doorAreas.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new ArrayList<>();
+                    }
+                }
                 for (Map.Entry<Integer, java.util.List<Map<String, Object>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
-                    area = this.doorAreas[y][x];
+                    area = this.doorAreas.get(y)[x];
                     area.clear();
                     if (entry.getValue() == null)
                         continue;
@@ -604,10 +672,17 @@ public class MapData {
             for (Map.Entry<Integer, Map<Integer, java.util.List<Map<String, Integer>>>> rowEntry : spritesMap
                     .entrySet()) {
                 y = rowEntry.getKey();
+                if (spriteAreas.size() <= y) {
+                    ArrayList<SpriteEntry>[] row = new ArrayList[WIDTH_IN_SECTORS];
+                    spriteAreas.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new ArrayList<>();
+                    }
+                }
                 for (Map.Entry<Integer, java.util.List<Map<String, Integer>>> entry : rowEntry
                         .getValue().entrySet()) {
                     x = entry.getKey();
-                    area = this.spriteAreas[y][x];
+                    area = this.spriteAreas.get(y)[x];
                     area.clear();
                     if (entry.getValue() == null)
                         continue;
@@ -739,10 +814,23 @@ public class MapData {
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (Throwable e) {
+        }
+    }
+
+    private void importCustomSectorData(Project proj) {
+        // This isn't actually a CoilSnake feature, it's just arbitrary ccscript
+        // so use raw path instead of looking it up in the project settings (which
+        // don't have it).
+        File file = new File(proj.getDirectory() + CustomSectorData.sectorDataPath);
+        if (!file.exists()) {
+            // CustomSectorData does the right thing while empty, so we can bail.
+            return;
+        }
+        try (InputStream input = new FileInputStream(file)) {
+            customSectorData.load(input);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private void exportTeleports(Project project) {
@@ -774,6 +862,15 @@ public class MapData {
         }
     }
 
+    private void exportCustomSectorData(Project proj) {
+        File file = new File(proj.getDirectory() + CustomSectorData.sectorDataPath);
+        try (OutputStream output = new FileOutputStream(file)) {
+            customSectorData.write(output);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void importEnemyPlacement(File f) {
         InputStream input;
         try {
@@ -787,7 +884,10 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / (WIDTH_IN_TILES / 2);
                 x = entry.getKey() % (WIDTH_IN_TILES / 2);
-                enemyPlacement[y][x] = entry.getValue().get(
+                if (enemyPlacement.size() <= y) {
+                    enemyPlacement.add(new Integer[WIDTH_IN_TILES / 2]);
+                }
+                enemyPlacement.get(y)[x] = entry.getValue().get(
                         "Enemy Map Group");
             }
         } catch (FileNotFoundException e) {
@@ -799,7 +899,7 @@ public class MapData {
     private void exportEnemyPlacement(File f) {
         Map<Integer, Map<String, Integer>> enemiesMap = new HashMap<Integer, Map<String, Integer>>();
         int i = 0;
-        for (int[] row : enemyPlacement) {
+        for (Integer[] row : enemyPlacement) {
             for (int ep : row) {
                 Map<String, Integer> entry = new HashMap<String, Integer>();
                 entry.put("Enemy Map Group", ep);
@@ -834,7 +934,14 @@ public class MapData {
                     .entrySet()) {
                 y = entry.getKey() / WIDTH_IN_SECTORS;
                 x = entry.getKey() % WIDTH_IN_SECTORS;
-                sec = sectors[y][x];
+                if (sectors.size() <= y) {
+                    Sector[] row = new Sector[WIDTH_IN_SECTORS];
+                    sectors.add(row);
+                    for (int ix = 0; ix < WIDTH_IN_SECTORS; ix++) {
+                        row[ix] = new Sector();
+                    }
+                }
+                sec = sectors.get(y)[x];
                 sec.tileset = (Integer) (entry.getValue().get("Tileset"));
                 sec.palette = (Integer) (entry.getValue().get("Palette"));
                 sec.music = (Integer) (entry.getValue().get("Music"));
@@ -892,15 +999,13 @@ public class MapData {
     }
 
     private void setMapTilesFromStream(InputStream in) {
-        String tmp;
+        Scanner scanner = new Scanner(in);
         try {
-            for (int i = 0; i < mapTiles.length; i++) {
-                for (int j = 0; j < mapTiles[i].length; j++) {
-                    tmp = "" + ((char) in.read());
-                    tmp += (char) in.read();
-                    tmp += (char) in.read();
-                    mapTiles[i][j] = Integer.parseInt(tmp, 16);
-                    in.read(); // " " or "\n"
+            while (scanner.hasNextInt(16)) {
+                Integer[] row = new Integer[WIDTH_IN_TILES];
+                mapTiles.add(row);
+                for (int j = 0; j < WIDTH_IN_TILES; j++) {
+                    row[j] = scanner.nextInt(16);
                 }
             }
         } catch (Exception e) {
@@ -911,14 +1016,14 @@ public class MapData {
     private void writeMapTilesToStream(FileOutputStream out) {
         try {
             String tmp;
-            for (int i = 0; i < mapTiles.length; i++) {
-                for (int j = 0; j < mapTiles[i].length; j++) {
+            for (int i = 0; i < mapTiles.size(); i++) {
+                for (int j = 0; j < mapTiles.get(i).length; j++) {
                     tmp = ToolModule.addZeros(
-                            Integer.toHexString(mapTiles[i][j]), 3);
+                            Integer.toHexString(mapTiles.get(i)[j]), 3);
                     out.write(tmp.charAt(0));
                     out.write(tmp.charAt(1));
                     out.write(tmp.charAt(2));
-                    if (j != mapTiles[i].length - 1)
+                    if (j != mapTiles.get(i).length - 1)
                         out.write(' ');
                 }
                 out.write('\n');
@@ -929,11 +1034,11 @@ public class MapData {
     }
 
     public int getMapTile(int x, int y) {
-        return mapTiles[y][x];
+        return mapTiles.get(y)[x];
     }
 
     public void setMapTile(int x, int y, int tile) {
-        mapTiles[y][x] = tile;
+        mapTiles.get(y)[x] = tile;
     }
 
     public static class Sector {
@@ -1079,9 +1184,9 @@ public class MapData {
     }
 
     public void nullMapData() {
-        for (int i = 0; i < mapTiles.length; i++) {
-            for (int j = 0; j < mapTiles[i].length; j++) {
-                mapTiles[i][j] = 0;
+        for (int i = 0; i < mapTiles.size(); i++) {
+            for (int j = 0; j < mapTiles.get(i).length; j++) {
+                mapTiles.get(i)[j] = 0;
             }
         }
         for (Sector[] row : sectors) {
@@ -1092,9 +1197,9 @@ public class MapData {
     }
 
     public void nullEnemyData() {
-        for (int i = 0; i < enemyPlacement.length; ++i)
-            for (int j = 0; j < enemyPlacement[i].length; ++j)
-                enemyPlacement[i][j] = 0;
+        for (int i = 0; i < enemyPlacement.size(); ++i)
+            for (int j = 0; j < enemyPlacement.get(i).length; ++j)
+                enemyPlacement.get(i)[j] = 0;
     }
 
     public void nullDoorData() {

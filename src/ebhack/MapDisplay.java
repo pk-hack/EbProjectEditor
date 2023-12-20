@@ -197,6 +197,14 @@ public class MapDisplay extends AbstractButton implements
         setPreferredSize(new Dimension(
                 screenWidth * MapData.TILE_WIDTH + 2, screenHeight
                 * MapData.TILE_HEIGHT + 2));
+
+        // Call screen resize whenever we get resized
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                resetScreenSize();
+            }
+        });
     }
 
     public void init() {
@@ -265,10 +273,14 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
-        if (grid && !gamePreview && !currentMode.drawEnemies())
+        if (currentMode == MapMode.CUSTOM_SECTOR) {
+            drawSectorDetails(g);
+        }
+
+        if (grid && !gamePreview && !currentMode.drawEnemies() && currentMode != MapMode.CUSTOM_SECTOR)
             drawGrid(g);
 
-        if (currentMode == MapMode.MAP && (selectedSector != null)) {
+        if (currentMode.drawSectors() && (selectedSector != null)) {
             int sXt, sYt;
             if (((sXt = sectorX * MapData.SECTOR_WIDTH)
                     + MapData.SECTOR_WIDTH >= screenX)
@@ -477,6 +489,55 @@ public class MapDisplay extends AbstractButton implements
             g.drawImage(map.getSpriteImage(1, 2), tvPreviewX - 7,
                     tvPreviewY - 15, this);
         }
+    }
+
+    private void drawSectorDetails(Graphics2D g) {
+        // Translations to undo the weird coords the rest of the editor is on
+        int translateX = -screenX * MapData.TILE_WIDTH;
+        int translateY = -screenY * MapData.TILE_WIDTH;
+        // Draw sectors on screen
+        for (int sx = screenX / MapData.SECTOR_WIDTH; sx <= (screenX + screenWidth) / MapData.SECTOR_WIDTH; sx++) {
+            if (sx >= MapData.WIDTH_IN_SECTORS) {
+                break;
+            }
+            for (int sy = screenY / MapData.SECTOR_HEIGHT; sy <= (screenY + screenHeight) / MapData.SECTOR_HEIGHT; sy++) {
+                if (sy >= map.getHeightInSectors()) {
+                    break;
+                }
+                // Get screen coords
+                int x = sx * MapData.SECTOR_WIDTH_IN_PIXELS+ translateX;
+                int y = sy * MapData.SECTOR_HEIGHT_IN_PIXELS + translateY;
+                // Draw grid
+                g.setPaint(Color.black);
+                g.drawRect(x, y, MapData.SECTOR_WIDTH_IN_PIXELS, MapData.SECTOR_HEIGHT_IN_PIXELS);
+                // Draw coordinate label
+                String label = String.format("(%d, %d)", sx, sy);
+                Rectangle2D textBG = g.getFontMetrics().getStringBounds(label, g);
+                g.setPaint(Color.black);
+                g.fillRect(x, y, (int) textBG.getWidth(), (int) textBG.getHeight());
+                g.setPaint(Color.white);
+                g.drawString(label, x, (int) (y + textBG.getHeight()));
+                // Draw all other properties
+                Point drawNext = new Point(0, (int) textBG.getHeight());
+                for (String property : map.getCustomSectorData().getKeys()) {
+                    String value = map.getCustomSectorData().getSectorValue(property, new Point(sx, sy));
+                    label = String.format("%s: %s", property, value);
+                    textBG = g.getFontMetrics().getStringBounds(label, g);
+                    drawNext.y += (int) textBG.getHeight();
+                    if (drawNext.y > MapData.SECTOR_HEIGHT_IN_PIXELS) {
+                        // Format as two columns
+                        // (and honestly, if that's not enough, you're in too deep)
+                        drawNext.y = (int) textBG.getHeight();
+                        drawNext.x += MapData.SECTOR_WIDTH_IN_PIXELS / 2;
+                    }
+                    g.setColor(Color.darkGray);
+                    g.fillRect(x + drawNext.x, y + drawNext.y - (int) textBG.getHeight(), (int) textBG.getWidth(), (int) textBG.getHeight());
+                    g.setPaint(Color.white);
+                    g.drawString(label, x + drawNext.x, y + drawNext.y);
+                }
+            }
+        }
+
     }
 
     public void drawEnemyPlate(Graphics2D g, Rectangle2D rect, int mapEnemyGroupId) {
@@ -723,7 +784,7 @@ public class MapDisplay extends AbstractButton implements
 
     public int getMaxScrollY() {
         // Half the screen below the map
-        int mapSize = MapData.HEIGHT_IN_TILES * MapData.TILE_WIDTH;
+        int mapSize = map.getHeightInPixels();
         int screenSize = (int) (getSize().height / (2 * zoom));
         return mapSize - screenSize;
     }
@@ -748,7 +809,7 @@ public class MapDisplay extends AbstractButton implements
         tileX = Math.max(0, tileX);
         tileY = Math.max(0, tileY);
         this.screenX = Math.min(tileX, MapData.WIDTH_IN_TILES - screenWidth);
-        this.screenY = Math.min(tileY, MapData.HEIGHT_IN_TILES - screenHeight);
+        this.screenY = Math.min(tileY, map.getHeightInTiles() - screenHeight);
     }
 
     public void centerScroll(int x, int y) {
@@ -802,7 +863,7 @@ public class MapDisplay extends AbstractButton implements
             int invZoom = (int) (1.0 / zoom);
             invZoom -= delta;
             invZoom = Math.max(1, invZoom);
-            invZoom = Math.min(8, invZoom);
+            invZoom = Math.min(4, invZoom);
             zoom = 1.0 / invZoom;
         }
         // Adjust scroll so worldX/worldY stay the same
@@ -960,6 +1021,14 @@ public class MapDisplay extends AbstractButton implements
                         }
                     }
                 }
+            } else if (currentMode == MapMode.CUSTOM_SECTOR) {
+                // Don't check what button
+                // Make sure they didn't click on the border
+                int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
+                        / MapData.SECTOR_WIDTH;
+                int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
+                        / MapData.SECTOR_HEIGHT;
+                selectSector(sX, sY);
             }
         }
     }
@@ -1416,7 +1485,7 @@ public class MapDisplay extends AbstractButton implements
         newSW = (int) Math.ceil(newSW / zoom);
         newSH = (int) Math.ceil(newSH / zoom);
         newSW = Math.min(newSW, MapData.WIDTH_IN_TILES);
-        newSH = Math.min(newSH, MapData.HEIGHT_IN_TILES);
+        newSH = Math.min(newSH, map.getHeightInTiles());
         if ((newSW != screenWidth) || (newSH != screenHeight)) {
             screenWidth = newSW;
             screenHeight = newSH;
