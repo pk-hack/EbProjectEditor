@@ -27,6 +27,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 	public static MapData map;
 	private MapDisplay mapDisplay;
 	private MapTileSelector tileSelector;
+	private CustomSectorEditor sectorEditor;
 
 	private MapData.Sector copiedSector, copiedSector2;
 	private int[][] copiedSectorTiles = new int[4][8];
@@ -132,6 +133,13 @@ public class MapEditor extends ToolModule implements ActionListener,
 		radioButton.setAccelerator(KeyStroke.getKeyStroke("F5"));
 		radioButton.setSelected(true);
 		radioButton.setActionCommand("mode6");
+		radioButton.addActionListener(this);
+		group.add(radioButton);
+		modeMenu.add(radioButton);
+		radioButton = new JRadioButtonMenuItem("Custom Sector Edit");
+		radioButton.setAccelerator(KeyStroke.getKeyStroke("F9"));
+		radioButton.setSelected(true);
+		radioButton.setActionCommand("modecustom");
 		radioButton.addActionListener(this);
 		group.add(radioButton);
 		modeMenu.add(radioButton);
@@ -332,6 +340,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 		mapDisplay = new MapDisplay(map, copySector, pasteSector, copySector2,
 				pasteSector2, undo, redo, pixelCoordLabel, warpCoordLabel,
 				tileCoordLabel, prefs);
+		sectorEditor = new CustomSectorEditor(mapDisplay, map);
+		mainWindow.getContentPane().add(sectorEditor, BorderLayout.LINE_START);
+
 		mapDisplay.addMouseWheelListener(this);
 		mapDisplay.addActionListener(this);
 		mapDisplay.init();
@@ -372,6 +383,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 		mainWindow.validate();
 		mainWindow.setResizable(true);
 		updateXYScrollBars();
+		setMode(MapMode.MAP);
 	}
 
 	private void loadTilesetNames() {
@@ -538,6 +550,14 @@ public class MapEditor extends ToolModule implements ActionListener,
 		}
 	}
 
+	public void setMode(MapMode mode) {
+		mapDisplay.changeMode(mode);
+		tileSelector.changeMode(mode);
+		tileSelector.setVisible(mode.showTileSelector());
+		sectorEditor.setVisible(mode == MapMode.CUSTOM_SECTOR);
+		mainWindow.repaint();
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("sectorChanged")) {
 			MapData.Sector sect = mapDisplay.getSelectedSector();
@@ -553,6 +573,7 @@ public class MapEditor extends ToolModule implements ActionListener,
 				townMapXField.setEnabled(false);
 				townMapYField.setEnabled(false);
 				townMapArrowChooser.setEnabled(false);
+				sectorEditor.setSectorCoords(null);
 			} else {
 				if (!tilesetChooser.isEnabled()) {
 					tilesetChooser.setEnabled(true);
@@ -633,6 +654,9 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 				if (tileSelector != null)
 					tileSelector.repaint();
+
+				sectorEditor.setSectorCoords(new Point(
+						mapDisplay.getSectorX(), mapDisplay.getSectorY()));
 			}
 		} else if (e.getSource().equals(tilesetChooser)) {
 			mapDisplay.setSelectedSectorTileset(tilesetChooser
@@ -669,40 +693,21 @@ public class MapEditor extends ToolModule implements ActionListener,
 		} else if (e.getActionCommand().equals("close")) {
 			hide();
 		} else if (e.getActionCommand().equals("mode0")) {
-			mapDisplay.changeMode(MapMode.MAP);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.MAP);
-			tileSelector.repaint();
+			setMode(MapMode.MAP);
 		} else if (e.getActionCommand().equals("mode1")) {
-			mapDisplay.changeMode(MapMode.SPRITE);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.SPRITE);
-			tileSelector.repaint();
+			setMode(MapMode.SPRITE);
 		} else if (e.getActionCommand().equals("mode2")) {
-			mapDisplay.changeMode(MapMode.DOOR);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.DOOR);
-			tileSelector.repaint();
+			setMode(MapMode.DOOR);
 		} else if (e.getActionCommand().equals("mode6")) {
-			mapDisplay.changeMode(MapMode.HOTSPOT);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.HOTSPOT);
-			tileSelector.repaint();
+			setMode(MapMode.HOTSPOT);
 		} else if (e.getActionCommand().equals("mode7")) {
-			mapDisplay.changeMode(MapMode.ENEMY);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.ENEMY);
-			tileSelector.repaint();
+			setMode(MapMode.ENEMY);
 		} else if (e.getActionCommand().equals("mode8")) {
-			mapDisplay.changeMode(MapMode.VIEW_ALL);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.VIEW_ALL);
-			tileSelector.repaint();
+			setMode(MapMode.VIEW_ALL);
 		} else if (e.getActionCommand().equals("mode9")) {
-			mapDisplay.changeMode(MapMode.PREVIEW);
-			mapDisplay.repaint();
-			tileSelector.changeMode(MapMode.PREVIEW);
-			tileSelector.repaint();
+			setMode(MapMode.PREVIEW);
+		} else if (e.getActionCommand().equals("modecustom")) {
+			setMode(MapMode.CUSTOM_SECTOR);
 		} else if (e.getActionCommand().equals("delAllSprites")) {
 			int sure = JOptionPane
 					.showConfirmDialog(
@@ -1066,7 +1071,6 @@ public class MapEditor extends ToolModule implements ActionListener,
 
 	@Override
 	public void componentResized(ComponentEvent arg0) {
-		mapDisplay.resetScreenSize();
 		// Reset this in case they lowered the window size and are now off the side
 		mapDisplay.setMapXYPixel(xScroll.getValue(), yScroll.getValue());
 		updateXYScrollBars();

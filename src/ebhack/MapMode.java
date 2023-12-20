@@ -10,7 +10,8 @@ public enum MapMode {
     HOTSPOT, // 6
     ENEMY, // 7
     VIEW_ALL, // 8
-    PREVIEW; // 9
+    PREVIEW, // 9
+    CUSTOM_SECTOR;
 
     public boolean drawSprites() {
         return this == SPRITE || this == SEEK_DOOR
@@ -27,4 +28,7 @@ public enum MapMode {
     public boolean drawHotspots() {
         return this == HOTSPOT || this == VIEW_ALL;
     }
+    public boolean drawSectors() { return this == MAP || this == CUSTOM_SECTOR; }
+
+    public boolean showTileSelector() { return this == MAP || this == ENEMY; }
 }

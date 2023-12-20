@@ -2,6 +2,7 @@ package ebhack;
 
 import ebhack.types.EnemyGroup;
 import ebhack.types.MapEnemyGroup;
+import ebhack.types.CustomSectorData;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -9,7 +10,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.sql.Array;
 import java.util.*;
 import java.util.List;
 
@@ -20,6 +20,8 @@ public class MapData {
     public static final int SECTOR_HEIGHT = 4;
     public static final int WIDTH_IN_SECTORS = WIDTH_IN_TILES
             / SECTOR_WIDTH;
+    public static final int SECTOR_WIDTH_IN_PIXELS = SECTOR_WIDTH * 32;
+    public static final int SECTOR_HEIGHT_IN_PIXELS = SECTOR_HEIGHT * 32;
     public static final int TILE_WIDTH = 32;
     public static final int TILE_HEIGHT = 32;
 
@@ -40,6 +42,7 @@ public class MapData {
     private final ArrayList<EnemyGroup> enemyGroups = new ArrayList<>();
     private final ArrayList<Integer> enemyOverworldSprites = new ArrayList<>();
     private final ArrayList<Image> enemySpriteImages = new ArrayList<>();
+    private final CustomSectorData customSectorData = new CustomSectorData();
 
     public MapData() {
         reset();
@@ -76,6 +79,7 @@ public class MapData {
                 "map_enemy_placement")));
         importHotspots(new File(proj.getFilename("eb.MiscTablesModule",
                 "map_hotspots")));
+        importCustomSectorData(proj);
         loadExtraResources(proj);
     }
 
@@ -99,6 +103,7 @@ public class MapData {
                 "map_enemy_placement")));
         exportHotspots(new File(proj.getFilename("eb.MiscTablesModule",
                 "map_hotspots")));
+        exportCustomSectorData(proj);
     }
 
     public NPC getNPC(int n) {
@@ -310,6 +315,8 @@ public class MapData {
                 row[ix] = 0;
             }
         }
+        // Expand custom sector data
+        customSectorData.extend(CHUNK_HEIGHT / SECTOR_HEIGHT);
     }
 
     private void importNPCs(File f) {
@@ -330,6 +337,14 @@ public class MapData {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    public CustomSectorData getCustomSectorData() {
+        return customSectorData;
+    }
+
+    public int getSectorCount() {
+        return this.sectors.size() * WIDTH_IN_SECTORS;
     }
 
     private void importSpriteGroups(Project proj) {
@@ -426,6 +441,10 @@ public class MapData {
 
     public int getHeightInTiles() {
         return mapTiles.size();
+    }
+
+    public int getHeightInSectors() {
+        return sectors.size();
     }
 
     public static class Door {
@@ -747,6 +766,33 @@ public class MapData {
             yaml.dump(hsMap, fw);
         } catch (IOException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void importCustomSectorData(Project proj) {
+        // This isn't actually a CoilSnake feature, it's just arbitrary ccscript
+        // so use raw path instead of looking it up in the project settings (which
+        // don't have it).
+        File file = new File(proj.getDirectory() + CustomSectorData.sectorDataPath);
+        if (!file.exists()) {
+            // CustomSectorData does the right thing while empty, so we can bail.
+            return;
+        }
+        try (InputStream input = new FileInputStream(file)) {
+            customSectorData.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void exportCustomSectorData(Project proj) {
+        File file = new File(proj.getDirectory() + CustomSectorData.sectorDataPath);
+        try (OutputStream output = new FileOutputStream(file)) {
+            customSectorData.write(output);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
