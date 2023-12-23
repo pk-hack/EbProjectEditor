@@ -513,7 +513,7 @@ public class MapDisplay extends AbstractButton implements
                 g.setPaint(Color.white);
                 g.drawString(spawnRate, (int) (rect.getMaxX() - textBG.getWidth()), (int) rect.getY() + 48);
             }
-            g.setClip(null);
+            g.setClip(originalClip);
         }
 
         // Draw labels
