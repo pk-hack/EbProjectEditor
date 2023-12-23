@@ -1,5 +1,7 @@
 package ebhack;
 
+import ebhack.types.EnemyGroup;
+import ebhack.types.MapEnemyGroup;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -36,6 +38,10 @@ public class MapData {
     private static ArrayList<Integer[]> spriteGroupDims;
     private int[][] enemyPlacement;
     private Hotspot[] hotspots;
+    private final ArrayList<MapEnemyGroup> mapEnemyGroups = new ArrayList<>();
+    private final ArrayList<EnemyGroup> enemyGroups = new ArrayList<>();
+    private final ArrayList<Integer> enemyOverworldSprites = new ArrayList<>();
+    private final ArrayList<Image> enemySpriteImages = new ArrayList<>();
 
     public MapData() {
         reset();
@@ -83,6 +89,8 @@ public class MapData {
         importNPCs(new File(proj.getFilename("eb.MiscTablesModule",
                 "npc_config_table")));
         importSpriteGroups(proj);
+        importEnemyData(proj);
+        importEnemySprites(proj);
     }
 
     public void save(Project proj) {
@@ -101,6 +109,26 @@ public class MapData {
 
     public NPC getNPC(int n) {
         return npcs.get(n);
+    }
+
+    public EnemyGroup getEnemyGroup(int n) {
+        return enemyGroups.get(n);
+    }
+
+    public MapEnemyGroup getMapEnemyGroup(int n) {
+        return mapEnemyGroups.get(n);
+    }
+
+    public Image getEnemySprite(int n, boolean inBattle) {
+        if (inBattle) {
+            Image result = enemySpriteImages.get(n);
+            if (result != null) {
+                return result;
+            }
+            // Continue anyway in case it has an overworld sprite.
+            // (it's probably a magic butterfly)
+        }
+        return getSpriteImage(enemyOverworldSprites.get(n), 2);
     }
 
     public Integer[] getSpriteWH(int n) {
@@ -301,6 +329,58 @@ public class MapData {
                 e.printStackTrace();
             }
             i++;
+        }
+    }
+
+    private void importEnemySprites(Project proj) {
+        // Going with hard-coded 256 limit in case somebody expands the table, and because
+        // some entries may be missing. If someone raises the limit past 256 we can have a
+        // party while I update it.
+        for (int i = 0; i < 256; i++) {
+            Image image = null;
+            try {
+                String spriteResourceFid = "BattleSprites/" + ToolModule.addZeros(i + "", 3);
+                String spriteFilename = proj.getFilenameOrNull("eb.EnemyModule", spriteResourceFid);
+                if (spriteFilename != null) {
+                    image = ImageIO.read(new File(spriteFilename));
+                }
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            // Always add images; nulls will be used to pad out the array
+            enemySpriteImages.add(image);
+        }
+    }
+
+    private void importEnemyData(Project proj) {
+        File mapGroupsFile = new File(proj.getFilename(
+                "eb.MapEnemyModule", "map_enemy_groups"));
+        File enemyGroupsFile = new File(proj.getFilename(
+                "eb.EnemyModule", "enemy_groups"));
+        File enemiesFile = new File(proj.getFilename(
+                "eb.EnemyModule", "enemy_configuration_table"));
+        try {
+            Map<Integer, Object> mapEnemyGroupYaml = new Yaml().load(new FileInputStream(mapGroupsFile));
+            for (Map.Entry<Integer, Object> entry : mapEnemyGroupYaml.entrySet()) {
+                MapEnemyGroup group = new MapEnemyGroup(entry.getValue());
+                mapEnemyGroups.add(group);
+            }
+            Map<Integer, Object> enemyGroupYaml = new Yaml().load(new FileInputStream(enemyGroupsFile));
+            for (Map.Entry<Integer, Object> entry : enemyGroupYaml.entrySet()) {
+                EnemyGroup group = new EnemyGroup(entry.getValue());
+                enemyGroups.add(group);
+            }
+            Map<Integer, Object> enemiesYaml = new Yaml().load(new FileInputStream(enemiesFile));
+            for (Map.Entry<Integer, Object> entry : enemiesYaml.entrySet()) {
+                Map<String, Object> enemy = (Map<String, Object>) entry.getValue();
+                enemyOverworldSprites.add((int) enemy.get("Overworld Sprite"));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 
