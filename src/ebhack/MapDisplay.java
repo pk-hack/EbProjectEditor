@@ -487,7 +487,8 @@ public class MapDisplay extends AbstractButton implements
 
         // Draw the enemies in a clip region so it's okay to overflow
         if (zoom >= MIN_ZOOM_TO_DISPLAY_ENEMIES) {
-            g.setClip(rect);
+            Rectangle2D originalClip = (Rectangle2D) g.getClip();
+            g.setClip(originalClip.createIntersection(rect));
             // Start a group
             if (!mapEnemyGroup.subGroup1.isEmpty() || mapEnemyGroup.subGroup1Rate > 0) {
                 int x = 0;
