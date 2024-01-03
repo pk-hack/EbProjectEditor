@@ -2,6 +2,8 @@ package ebhack;
 
 import ebhack.types.EnemyGroup;
 import ebhack.types.MapEnemyGroup;
+import ebhack.types.PsiTeleportDestination;
+import ebhack.types.TeleportDestination;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -38,6 +40,8 @@ public class MapData {
     private static ArrayList<Integer[]> spriteGroupDims;
     private int[][] enemyPlacement;
     private Hotspot[] hotspots;
+    private final ArrayList<TeleportDestination> teleportDestinations = new ArrayList<>();
+    private final ArrayList<PsiTeleportDestination> psiTeleportDestinations = new ArrayList<>();
     private final ArrayList<MapEnemyGroup> mapEnemyGroups = new ArrayList<>();
     private final ArrayList<EnemyGroup> enemyGroups = new ArrayList<>();
     private final ArrayList<Integer> enemyOverworldSprites = new ArrayList<>();
@@ -68,6 +72,12 @@ public class MapData {
         hotspots = new Hotspot[56];
         for (int i = 0; i < hotspots.length; ++i)
             hotspots[i] = new Hotspot();
+        teleportDestinations.clear();
+        psiTeleportDestinations.clear();
+        mapEnemyGroups.clear();
+        enemyGroups.clear();
+        enemyOverworldSprites.clear();
+        enemySpriteImages.clear();
     }
 
     public void load(Project proj) {
@@ -82,6 +92,10 @@ public class MapData {
                 "map_enemy_placement")));
         importHotspots(new File(proj.getFilename("eb.MiscTablesModule",
                 "map_hotspots")));
+        importTeleports(new File(proj.getFilename("eb.MiscTablesModule",
+                "teleport_destination_table")));
+        importPsiTeleports(new File(proj.getFilename("eb.MiscTablesModule",
+                "psi_teleport_dest_table")));
         loadExtraResources(proj);
     }
 
@@ -105,6 +119,7 @@ public class MapData {
                 "map_enemy_placement")));
         exportHotspots(new File(proj.getFilename("eb.MiscTablesModule",
                 "map_hotspots")));
+        exportTeleports(proj);
     }
 
     public NPC getNPC(int n) {
@@ -235,6 +250,15 @@ public class MapData {
 
     public Hotspot getHotspot(int n) {
         return hotspots[n];
+    }
+
+    // Teleport
+    public List<TeleportDestination> getTeleportDestinations() {
+        return teleportDestinations;
+    }
+
+    public List<PsiTeleportDestination> getPsiTeleportDestinations() {
+        return psiTeleportDestinations;
     }
 
     // Other
@@ -378,9 +402,6 @@ public class MapData {
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
         }
     }
 
@@ -687,6 +708,66 @@ public class MapData {
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
             Yaml yaml = new Yaml(options);
             yaml.dump(hsMap, fw);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void importTeleports(File f) {
+        try {
+            InputStream input = new FileInputStream(f);
+            Yaml yaml = new Yaml();
+            Map<Integer, Object> hsMap = yaml.load(input);
+            for (Map.Entry<Integer, Object> entry : hsMap.entrySet()) {
+                teleportDestinations.add(new TeleportDestination(entry.getKey(), entry.getValue()));
+            }
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void importPsiTeleports(File f) {
+        try {
+            InputStream input = new FileInputStream(f);
+            Yaml yaml = new Yaml();
+            Map<Integer, Object> hsMap = yaml.load(input);
+            for (Map.Entry<Integer, Object> entry : hsMap.entrySet()) {
+                psiTeleportDestinations.add(new PsiTeleportDestination(entry.getKey(), entry.getValue()));
+            }
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void exportTeleports(Project project) {
+        // Convert to hash maps
+        Map<Integer, Object> destsMap = new HashMap<>();
+        for (TeleportDestination dest : teleportDestinations) {
+            destsMap.put(dest.id, dest.serialize());
+        }
+        Map<Integer, Object> psiMap = new HashMap<>();
+        for (PsiTeleportDestination dest : psiTeleportDestinations) {
+            psiMap.put(dest.id, dest.serialize());
+        }
+        // Find files
+        File destsFile = new File(project.getFilename("eb.MiscTablesModule",
+                "teleport_destination_table"));
+        File psiFile = new File(project.getFilename("eb.MiscTablesModule",
+                "psi_teleport_dest_table"));
+
+        // Attempt export
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml yaml = new Yaml(options);
+        try {
+            yaml.dump(destsMap, new FileWriter(destsFile));
+            yaml.dump(psiMap, new FileWriter(psiFile));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

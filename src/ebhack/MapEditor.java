@@ -135,6 +135,13 @@ public class MapEditor extends ToolModule implements ActionListener,
 		radioButton.addActionListener(this);
 		group.add(radioButton);
 		modeMenu.add(radioButton);
+		radioButton = new JRadioButtonMenuItem("Teleport Edit");
+		radioButton.setAccelerator(KeyStroke.getKeyStroke("F8"));
+		radioButton.setSelected(true);
+		radioButton.setActionCommand("modeteleport");
+		radioButton.addActionListener(this);
+		group.add(radioButton);
+		modeMenu.add(radioButton);
 		radioButton = new JRadioButtonMenuItem("Whole View");
 		radioButton.setAccelerator(KeyStroke.getKeyStroke("F6"));
 		radioButton.setSelected(true);
@@ -700,6 +707,11 @@ public class MapEditor extends ToolModule implements ActionListener,
 			mapDisplay.changeMode(MapMode.PREVIEW);
 			mapDisplay.repaint();
 			tileSelector.changeMode(MapMode.PREVIEW);
+			tileSelector.repaint();
+		} else if (e.getActionCommand().equals("modeteleport")) {
+			mapDisplay.changeMode(MapMode.TELEPORT);
+			mapDisplay.repaint();
+			tileSelector.changeMode(MapMode.TELEPORT);
 			tileSelector.repaint();
 		} else if (e.getActionCommand().equals("delAllSprites")) {
 			int sure = JOptionPane

@@ -1,7 +1,6 @@
 package ebhack;
 
-import ebhack.types.EnemyGroup;
-import ebhack.types.MapEnemyGroup;
+import ebhack.types.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -82,6 +81,7 @@ public class MapDisplay extends AbstractButton implements
     private Image movingNPCimg;
     private Integer[] movingNPCdim;
     private MapData.Door movingDoor = null;
+    private TileObject movingTeleport = null;
 
     // Popup menus
     private int popupX, popupY;
@@ -452,6 +452,10 @@ public class MapDisplay extends AbstractButton implements
             }
         }
 
+        if (currentMode.drawTeleports()) {
+            drawTeleports(g);
+        }
+
         if (gamePreview && tvPreview) {
             g.setComposite(AlphaComposite.getInstance(
                     AlphaComposite.SRC_OVER, 1.0F));
@@ -565,6 +569,46 @@ public class MapDisplay extends AbstractButton implements
     private double enemySpriteZoom() {
         double maxZoom = enemyBattleSprites ? 7 : 4;;
         return Math.min(zoom, maxZoom);
+    }
+
+    private void drawTeleports(Graphics2D g) {
+        int translateX = -screenX * MapData.TILE_WIDTH;
+        int translateY = -screenY * MapData.TILE_WIDTH;
+        for (TeleportDestination dest : map.getTeleportDestinations()) {
+            int x = dest.x * 8 + translateX;
+            int y = dest.y * 8 + translateY;
+            // Draw a label for the teleport number
+            String label = Integer.toString(dest.id);
+            Rectangle2D textBG = g.getFontMetrics().getStringBounds(label, g);
+            g.setPaint(new Color(3, 13, 42));
+            g.fillRect(x + 8, y, (int) textBG.getWidth(), (int) textBG.getHeight());
+            g.setColor(Color.white);
+            g.drawString(label, x + 8, (int) (y + textBG.getHeight()));
+            // Draw some sort of teleport icon
+            g.setPaint(new Color(3, 13, 42));
+            g.fillRect(x, y, 9, 9);
+            for (int ring = 0; ring < 4; ring+=2) {
+                g.setPaint(new Color(70, 113, 220));
+                g.fillOval(x + ring, y + ring, 9 - ring * 2, 9 - ring * 2);
+                g.setPaint(new Color(29, 54, 89));
+                g.fillOval(x + ring + 1, y + ring + 1, 7 - ring * 2, 7 - ring * 2);
+            }
+        }
+        Image teleportImage = map.getSpriteImage(13, 2);
+        for (PsiTeleportDestination dest : map.getPsiTeleportDestinations()) {
+            int x = dest.x * 8 + translateX;
+            int y = dest.y * 8 + translateY;
+            // Draw some sort of teleport icon
+            g.drawImage(teleportImage, x, y, null);
+            // Draw a label for the teleport number
+            x += teleportImage.getWidth(null);
+            String label = dest.id + " - " + dest.name;
+            Rectangle2D textBG = g.getFontMetrics().getStringBounds(label, g);
+            g.setPaint(new Color(3, 13, 42));
+            g.fillRect(x, y, (int) textBG.getWidth(), (int) textBG.getHeight());
+            g.setColor(Color.white);
+            g.drawString(label, x, (int) (y + textBG.getHeight()));
+        }
     }
 
     private void drawNumber(Graphics2D g, int n, int x, int y, boolean hex,
@@ -775,24 +819,15 @@ public class MapDisplay extends AbstractButton implements
         sectorX = sX;
         sectorY = sY;
         MapData.Sector newS = map.getSector(sectorX, sectorY);
-        if (selectedSector != newS) {
-            selectedSector = newS;
-            sectorPal = TileEditor.tilesets[TileEditor
-                    .getDrawTilesetNumber(selectedSector.tileset)]
-                    .getPaletteNum(selectedSector.tileset,
-                            selectedSector.palette);
-            copySector.setEnabled(true);
-            pasteSector.setEnabled(true);
-            copySector2.setEnabled(true);
-            pasteSector2.setEnabled(true);
-        } else {
-            // Un-select sector
-            selectedSector = null;
-            copySector.setEnabled(false);
-            pasteSector.setEnabled(false);
-            copySector2.setEnabled(false);
-            pasteSector2.setEnabled(false);
-        }
+        selectedSector = newS;
+        sectorPal = TileEditor.tilesets[TileEditor
+                .getDrawTilesetNumber(selectedSector.tileset)]
+                .getPaletteNum(selectedSector.tileset,
+                        selectedSector.palette);
+        copySector.setEnabled(true);
+        pasteSector.setEnabled(true);
+        copySector2.setEnabled(true);
+        pasteSector2.setEnabled(true);
         repaint();
         this.fireActionPerformed(sectorEvent);
     }
@@ -814,33 +849,7 @@ public class MapDisplay extends AbstractButton implements
                 && (mouseX <= screenWidth * MapData.TILE_WIDTH + 2)
                 && (mouseY >= 1)
                 && (mouseY <= screenHeight * MapData.TILE_HEIGHT + 2)) {
-            if (currentMode == MapMode.MAP) {
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
-                    int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
-                    if (e.isShiftDown()) {
-                        tileSelector.selectTile(map.getMapTile(mX, mY));
-                    } else if (!e.isControlDown()) {
-                        // Keep track of the undo stuff
-                        undoStack.push(new UndoableTileChange(mX, mY, map
-                                .getMapTile(mX, mY), tileSelector
-                                .getSelectedTile()));
-                        undoButton.setEnabled(true);
-                        redoStack.clear();
-
-                        map.setMapTile(mX, mY,
-                                tileSelector.getSelectedTile());
-                        repaint();
-                    }
-                } else if (e.getButton() == MouseEvent.BUTTON3) {
-                    // Make sure they didn't click on the border
-                    int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
-                            / MapData.SECTOR_WIDTH;
-                    int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
-                            / MapData.SECTOR_HEIGHT;
-                    selectSector(sX, sY);
-                }
-            } else if (currentMode == MapMode.SPRITE) {
+            if (currentMode == MapMode.SPRITE) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     popupX = mouseX;
                     popupY = mouseY;
@@ -953,6 +962,34 @@ public class MapDisplay extends AbstractButton implements
                     }
                 }
             }
+        }
+    }
+
+    private void mapModeClick(int mouseX, int mouseY, int button, boolean shift) {
+        if (button == MouseEvent.BUTTON1) {
+            int mX = (mouseX - 1) / MapData.TILE_WIDTH + screenX;
+            int mY = (mouseY - 1) / MapData.TILE_HEIGHT + screenY;
+            if (shift) {
+                tileSelector.selectTile(map.getMapTile(mX, mY));
+            } else {
+                // Keep track of the undo stuff
+                undoStack.push(new UndoableTileChange(mX, mY, map
+                        .getMapTile(mX, mY), tileSelector
+                        .getSelectedTile()));
+                undoButton.setEnabled(true);
+                redoStack.clear();
+
+                map.setMapTile(mX, mY,
+                        tileSelector.getSelectedTile());
+                repaint();
+            }
+        } else if (button == MouseEvent.BUTTON3) {
+            // Make sure they didn't click on the border
+            int sX = (screenX + ((mouseX - 1) / MapData.TILE_WIDTH))
+                    / MapData.SECTOR_WIDTH;
+            int sY = (screenY + ((mouseY - 1) / MapData.TILE_HEIGHT))
+                    / MapData.SECTOR_HEIGHT;
+            selectSector(sX, sY);
         }
     }
 
@@ -1124,6 +1161,8 @@ public class MapDisplay extends AbstractButton implements
                 this.setCursor(blankCursor);
                 repaint();
             }
+        } else if (currentMode == MapMode.MAP) {
+            mapModeClick(mx, my, e.getButton(), e.isShiftDown());
         } else if (e.getButton() == MouseEvent.BUTTON1) {
             if (currentMode == MapMode.SPRITE && (movingNPC == -1)) {
                 movingNPC = popNpcIdFromMouseXY(mx, my);
@@ -1142,6 +1181,25 @@ public class MapDisplay extends AbstractButton implements
                     movingDrawX = mx & (~7);
                     movingDrawY = my & (~7);
                     repaint();
+                }
+            } else if (currentMode == MapMode.TELEPORT && (movingTeleport == null)) {
+                // Use world coordinates; mouse coords are a silly thing to be backwards
+                // compatible with the old tile-based coordinates.
+                int worldX = (int) (e.getX() / zoom + scrollX);
+                int worldY = (int) (e.getY() / zoom + scrollY);
+                int tileX = worldX / 8;
+                int tileY = worldY / 8;
+                for (TeleportDestination dest : map.getTeleportDestinations()) {
+                    if (dest.x == tileX && dest.y == tileY) {
+                        movingTeleport = dest;
+                    }
+                }
+                for (PsiTeleportDestination dest : map.getPsiTeleportDestinations()) {
+                    // The teleport graphic is 2x3 tiles
+                    if (tileX >= dest.x && tileX <= dest.x + 1
+                            && tileY >= dest.y && tileY <= dest.y + 2) {
+                        movingTeleport = dest;
+                    }
                 }
             }
         }
@@ -1167,6 +1225,7 @@ public class MapDisplay extends AbstractButton implements
                 movingDoor = null;
                 repaint();
             }
+            movingTeleport = null;
         }
     }
 
@@ -1202,9 +1261,23 @@ public class MapDisplay extends AbstractButton implements
             movingDrawX = mouseX & (~7);
             movingDrawY = mouseY & (~7);
             repaint();
+        } else if (movingTeleport != null) {
+            int worldX = (int) (e.getX() / zoom + scrollX);
+            int worldY = (int) (e.getY() / zoom + scrollY);
+            int tileX = worldX / 8;
+            int tileY = worldY / 8;
+            tileX = Math.max(0, tileX);
+            tileY = Math.max(0, tileY);
+            tileX = Math.min(MapData.WIDTH_IN_TILES * 4 - 1, tileX);
+            tileY = Math.min(MapData.HEIGHT_IN_TILES * 4 - 1, tileY);
+            movingTeleport.x = tileX;
+            movingTeleport.y = tileY;
+            repaint();
         } else if (mouseDragButton == 2) {
             setMapXYPixel(scrollX - deltaX / zoom, scrollY - deltaY / zoom);
             this.repaint();
+        } else if (currentMode == MapMode.MAP) {
+            mapModeClick(mouseX, mouseY, mouseDragButton, e.isShiftDown());
         }
 
         updateCoordLabels(mouseX, mouseY);
