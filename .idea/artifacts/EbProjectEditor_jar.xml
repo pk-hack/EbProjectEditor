@@ -3,7 +3,7 @@
     <output-path>$PROJECT_DIR$/out/artifacts/EbProjectEditor_jar</output-path>
     <root id="archive" name="EbProjectEditor.jar">
       <element id="module-output" name="EbProjectEditor" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/yaml/snakeyaml/1.33/snakeyaml-1.33.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
