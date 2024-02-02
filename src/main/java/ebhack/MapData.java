@@ -127,7 +127,7 @@ public class MapData {
     }
 
     public EnemyGroup getEnemyGroup(int n) {
-        return enemyGroups.get(n);
+        return n < enemyGroups.size() ? enemyGroups.get(n) : null;
     }
 
     public MapEnemyGroup getMapEnemyGroup(int n) {

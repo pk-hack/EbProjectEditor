@@ -530,6 +530,8 @@ public class MapDisplay extends AbstractButton implements
      */
     public int drawEnemyGroup(Graphics2D g, Rectangle2D bounds, Point origin, int probability, int enemyGroupId) {
         EnemyGroup enemyGroup = map.getEnemyGroup(enemyGroupId);
+        if (enemyGroup == null)
+	        return 0;
         int maxX = origin.x;
         AffineTransform stashed = g.getTransform();
         g.translate(bounds.getX(), bounds.getY());
